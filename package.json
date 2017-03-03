@@ -1,0 +1,38 @@
+{
+  "name": "gen-swagger",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node   ./node_modules/.bin/mocha --compilers js:babel-register ./test/*-test.js",
+    "build": "babel src -d dist",
+    "tsc": "tsc --outDir ./js  /Users/jspears/WebstormProjects/gen-swagger/ts/io/swagger/codegen/*"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "collections": "^5.0.6",
+    "lodash": "^4.17.4",
+    "mkdirp": "^0.5.1",
+    "mustache": "^2.3.0",
+    "shelljs": "^0.7.6",
+    "sway": "^1.0.0"
+  },
+  "devDependencies": {
+    "babel-plugin-transform-async-to-generator": "^6.22.0",
+    "babel-plugin-transform-class-properties": "^6.23.0",
+    "babel-preset-node6": "^11.0.0",
+    "babel-register": "^6.23.0",
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "tsc": "^1.20150623.0"
+  },
+  "babel": {
+    "plugins": [
+      "transform-class-properties"
+    ],
+    "presets": [
+      "node6"
+    ]
+  }
+}
