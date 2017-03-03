@@ -6,76 +6,81 @@ import Path from "sway/lib/types/path";
 import Operation from "sway/lib/types/operation";
 import parameterFactory from "../models/parameters";
 import {beanify, beanProxy, apply} from "./beanUtils";
+import {Property} from "../models/properties";
 import Sway from "sway";
 
 ['get', 'post', 'put', 'head', 'patch', 'delete', 'options'].map(function method(name) {
 
     Path.prototype[`get${name[0].toUpperCase()}${name.substring(1)}`] = function () {
-        const val = this[name];
-        if (val == null) return val;
+        return this.getOperation(name);
 
-        return beanProxy(Object.assign({}, this[name], {
-            getParameters(){
-                if (!this._parameters) {
-                    this._parameters = this.parameters ? this.parameters.map(parameterFactory) : [];
-                }
-                return this._parameters;
-            },
-            getResponses(){
-                if (!this._responses)
-                    this._responses = new HashMap(Object.keys(this.responses).map(key => {
-                        const resp = this.responses[key], ret = Object.assign({}, resp, {
-                            getSchema() {
-                                if (!ret._schema) {
-                                    ret._schema = factory(resp.schema);
-                                }
-                                return ret._schema;
-                            }
-                        });
-                        return [key, beanProxy(ret)]
-                    }));
-                return this._responses;
-            }
-        }));
     }
 });
-
-Operation.prototype.getParameters = function () {
-    if (!this._parameters) {
-        this._parameters = this.parameters ? this.parameters.map(parameterFactory) : [];
-    }
-    return this._parameters;
-};
-
 const _asResponse = (r) => [(r.statusCode || 'default') + '', r];
 
-Operation.prototype.getResponses = function () {
-    if (!this._responses) {
-        this._responses = new HashMap(this.responseObjects.map(_asResponse));
+beanify(Object.assign(Operation.prototype, {
+    getVendorExtensions(){
+        if (!this._vendorExtensions) {
+            this._vendorExtensions = newHashMap();
+        }
+        return this._vendorExtensions;
+    },
+    getParameters() {
+        if (!this._parameters) {
+            this._parameters = this.parameters ? this.parameters.map(parameterFactory) : [];
+        }
+        return this._parameters;
+    },
+    getResponses() {
+        if (!this._responses) {
+            this._responses = new HashMap(this.responseObjects.map(_asResponse));
+        }
+        return this._responses;
+    },
+    getSchema(){
+        if (!this._schema) {
+            this._schema = factory(this.schema);
+        }
+        return this._schema;
     }
-    return this._responses;
-};
+}), ['produces', 'summary', 'tags', 'operationId', 'description', 'externalDocs', 'consumes', 'schemes', 'method', 'securityDefinitions']);
+
+
+
 
 Array.prototype.isEmpty = function () {
     return this.length === 0;
 };
 
-Response.prototype.getSchema = function () {
-    if (!this._schema) {
-        this._schema = factory(this.schema);
+beanify(Object.assign(Response.prototype, {
+    getSchema () {
+        if (!this._schema) {
+            this._schema = factory(Object.assign({description:this.definition.description}, this.definition.schema));
+        }
+        return this._schema;
+    },
+    setSchema(schema) {
+        if (schema instanceof Property)
+            this._schema = schema;
+        else
+            this.schema = schema;
+    },
+    getCode(){
+        return this.statusCode;
+    },
+    getHeaders(){
+        return this.headers && new HashMap(Object.keys(this.headers).map(key => [key, this.headers[key]]));
+    },
+    toJSON(){
+        return this.definition;
     }
-    return this._schema;
-};
-Response.prototype.setSchema = function (schema) {
-    this._schema = schema;
-};
+}), ['description', 'statusCode', 'examples']);
 
 SwaggerApi.prototype.getDefinitions = function () {
     if (!this._definitions) {
-        const defs = Object.keys(this.definitions).map(key => {
-            const obj = factory(Object.assign({name: key, title: key}, this.definitions[key]));
-            return [key, obj]
-        });
+        const defs = Object.keys(this.definitions).map(key => [key, factory(Object.assign({
+            name: key
+        }, this.definitions[key]))]);
         this._definitions = new HashMap(defs);
     }
     return this._definitions;

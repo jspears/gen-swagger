@@ -186,7 +186,7 @@ export default class DefaultCodegen {
                         cm.parentModel = allModels.get(cm.parent);
                     }
                     if (cm.interfaces != null && !cm.interfaces.isEmpty()) {
-                        cm.interfaceModels = (new ArrayList(cm.interfaces.size()));
+                        cm.interfaceModels = cm.interfaces.concat();
                         for (let index140 = cm.interfaces.iterator(); index140.hasNext();) {
                             let intf = index140.next();
                             {
@@ -257,9 +257,8 @@ export default class DefaultCodegen {
      * @param vars List of variable names
      * @return the common prefix for naming
      */
-    findCommonPrefixOfVars(vars) {
+    findCommonPrefixOfVars(listStr) {
         try {
-            let listStr = vars.toArray(new Array(vars.size()));
             let prefix = StringUtils.getCommonPrefix(listStr);
             return prefix.replace(new RegExp("[a-zA-Z0-9]+\\z", 'g'), "");
         }
@@ -1189,7 +1188,7 @@ export default class DefaultCodegen {
         }
         else {
             let impl = model;
-            if (impl.getEnum() != null && impl.getEnum().size() > 0) {
+            if (impl.getEnum() != null && impl.getEnum().length > 0) {
                 m.isEnum = true;
                 m.allowableValues = newHashMap();
                 m.allowableValues.put("values", impl.getEnum());
@@ -1602,17 +1601,17 @@ export default class DefaultCodegen {
      */
     findMethodResponse(responses) {
         let code = null;
-        for (const [key, {responseCode}] of responses) {
+        let resp;
+        for (const [responseCode, response] of responses) {
             if (('' + responseCode).startsWith("2") || (responseCode === "default")) {
-                if (code == null || responseCode > code) {
+                if (code == null || StringUtils.compareTo(responseCode, code) > 0) {
                     code = responseCode;
+                    resp = response;
                 }
             }
         }
-        if (code == null) {
-            return null;
-        }
-        return responses.get(code);
+
+        return resp;
     }
 
     /**
@@ -1641,13 +1640,13 @@ export default class DefaultCodegen {
         op.hasProduces = false;
         let consumes = [];
         if (operation.getConsumes() != null) {
-            if (operation.getConsumes().size() > 0) {
+            if (operation.getConsumes().length > 0) {
                 consumes = operation.getConsumes();
             }
             else {
             }
         }
-        else if (swagger != null && swagger.getConsumes() != null && swagger.getConsumes().size() > 0) {
+        else if (swagger != null && swagger.getConsumes() != null && swagger.getConsumes().length > 0) {
             consumes = swagger.getConsumes();
             Log.debug("No consumes defined in operation. Using global consumes (" + swagger.getConsumes() + ") for " + op.operationId);
         }
@@ -1660,7 +1659,7 @@ export default class DefaultCodegen {
                     let mediaType = newHashMap();
                     mediaType.put("mediaType", this.escapeText(this.escapeQuotationMark(key)));
                     count += 1;
-                    if (count < consumes.size()) {
+                    if (count < consumes.length) {
                         mediaType.put("hasMore", "true");
                     }
                     else {
@@ -1697,28 +1696,26 @@ export default class DefaultCodegen {
                 else {
                     mediaType.put("hasMore", null);
                 }
-                c.add(mediaType);
+                c.push(mediaType);
 
             }
             op.produces = c;
             op.hasProduces = true;
         }
-        if (operation.getResponses() != null && !operation.getResponses().isEmpty()) {
-            let methodResponse = this.findMethodResponse(operation.getResponses());
-            for (let index157 = operation.getResponses().entrySet().iterator(); index157.hasNext();) {
-                let entry = index157.next();
-                {
-                    let response = entry.getValue();
-                    let r = this.fromResponse(entry.getKey(), response);
-                    r.hasMore = true;
-                    if (r.baseType != null && !this.__defaultIncludes.contains(r.baseType) && !this.__languageSpecificPrimitives.contains(r.baseType)) {
-                        imports.add(r.baseType);
-                    }
-                    r.isDefault = response === methodResponse;
-                    op.responses.add(r);
-                    if (r.isBinary && r.isDefault) {
-                        op.isResponseBinary = true;
-                    }
+
+        const responses = operation.getResponses();
+        if (responses != null && !responses.isEmpty()) {
+            let methodResponse = this.findMethodResponse(responses);
+            for (const [key, response] of operation.getResponses()) {
+                let r = this.fromResponse(key, response);
+                r.hasMore = true;
+                if (r.baseType != null && !this.__defaultIncludes.contains(r.baseType) && !this.__languageSpecificPrimitives.contains(r.baseType)) {
+                    imports.add(r.baseType);
+                }
+                r.isDefault = response === methodResponse;
+                op.responses.add(r);
+                if (r.isBinary && r.isDefault) {
+                    op.isResponseBinary = true;
                 }
             }
             op.responses[op.responses.length - 1].hasMore = false;
@@ -1912,7 +1909,7 @@ export default class DefaultCodegen {
                 r.simpleType = false;
                 r.containerType = cm.containerType;
                 r.isMapContainer = ("map" === cm.containerType);
-                r.isListContainer = ("list" === cm.containerType);
+                r.isListContainer = ("list" === cm.containerType || "array" === this.containerType);
             }
             else {
                 r.simpleType = true;
@@ -2238,7 +2235,7 @@ export default class DefaultCodegen {
                 if (oauth2Definition.getScopes() != null) {
                     let scopes = [];
                     let count = 0;
-                    let numScopes = oauth2Definition.getScopes().size();
+                    let numScopes = oauth2Definition.getScopes().size;
                     for (let index161 = oauth2Definition.getScopes().entrySet().iterator(); index161.hasNext();) {
                         let scopeEntry = index161.next();
                         {
@@ -2361,7 +2358,7 @@ export default class DefaultCodegen {
             if (i > 0) {
                 objs.put("secondaryParam", true);
             }
-            if (i < objs.size() - 1) {
+            if (i < objs.size - 1) {
                 objs.put("hasMore", true);
             }
         }

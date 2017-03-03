@@ -1,4 +1,4 @@
-import _snakeCase from 'lodash/snakeCase';
+import _snakeCase from "lodash/snakeCase";
 const EMPTY = "";
 const INDEX_NOT_FOUND = -1;
 
@@ -73,8 +73,26 @@ export function camelize(word, lowerFirst) {
     return ret;
 }
 export const snakeCase = _snakeCase;
+export const compareTo = (value, anotherString) => {
+    if (value == null && anotherString == null) return 0;
+    if (value != null && anotherString == null) return 1;
+    if (value == null && anotherString != null) return -1;
+
+    const len1 = value.length;
+    const len2 = anotherString.length;
+
+    for (let k = 0, lim = Math.min(value.length, anotherString.length); k < lim; k++) {
+        const c1 = value[k];
+        const c2 = anotherString[k];
+        if (c1 != c2) {
+            return c1 - c2;
+        }
+    }
+    return len1 - len2;
+};
 
 export default ({
+    compareTo,
     join,
     snakeCase,
     camelize,

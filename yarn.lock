@@ -499,6 +499,12 @@ json-schema-faker@^0.2.8:
     faker "~3.1.0"
     randexp "~0.4.2"
 
+json-stable-stringify@^1.0.1:
+  version "1.0.1"
+  resolved "http://npme.walmart.com/json-stable-stringify/-/json-stable-stringify-1.0.1.tgz#9a759d39c5f2ff503fd5300646ed445f88c4f9af"
+  dependencies:
+    jsonify "~0.0.0"
+
 json3@3.3.2:
   version "3.3.2"
   resolved "http://npme.walmart.com/json3/-/json3-3.3.2.tgz#3c0434743df93e2f5c42aee7b19bcb483575f4e1"
@@ -506,6 +512,10 @@ json3@3.3.2:
 json5@^0.5.0:
   version "0.5.1"
   resolved "http://npme.walmart.com/json5/-/json5-0.5.1.tgz#1eade7acc012034ad84e2396767ead9fa5495821"
+
+jsonify@~0.0.0:
+  version "0.0.0"
+  resolved "http://npme.walmart.com/jsonify/-/jsonify-0.0.0.tgz#2c74b6ee41d93ca51b7b5aaee8f503631d252a73"
 
 lodash._baseassign@^3.0.0:
   version "3.2.0"

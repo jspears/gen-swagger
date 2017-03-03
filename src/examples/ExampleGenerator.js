@@ -32,23 +32,20 @@ export default class ExampleGenerator {
             if (mediaTypes == null) {
                 mediaTypes = Arrays.asList("application/json");
             }
-            for (let index198 = mediaTypes.iterator(); index198.hasNext();) {
-                let mediaType = index198.next();
-                {
-                    let kv = new HashMap(["contentType", mediaType]);
-                    if (property != null && ((str, searchString, position = 0) => str.substr(position, searchString.length) === searchString)(mediaType, "application/json")) {
-                        let example = Json.pretty(this.resolvePropertyToExample(mediaType, property, processedModels));
-                        if (example != null) {
-                            kv.put("example", example);
-                            output.add(kv);
-                        }
+            for (const mediaType of mediaTypes) {
+                let kv = newHashMap(["contentType", mediaType]);
+                if (property != null && mediaType.startsWith("application/json")) {
+                    let example = Json.pretty(this.resolvePropertyToExample(mediaType, property, processedModels));
+                    if (example != null) {
+                        kv.put("example", example);
+                        output.add(kv);
                     }
-                    else if (property != null && ((str, searchString, position = 0) => str.substr(position, searchString.length) === searchString)(mediaType, "application/xml")) {
-                        let example = new XmlExampleGenerator(this.examples).toXml(property);
-                        if (example != null) {
-                            kv.put("example", example);
-                            output.add(kv);
-                        }
+                }
+                else if (property != null && mediaType.startsWith("application/xml")) {
+                    let example = new XmlExampleGenerator(this.examples).toXml(property);
+                    if (example != null) {
+                        kv.put("example", example);
+                        output.add(kv);
                     }
                 }
             }

@@ -90,6 +90,6 @@ export default class RefModel extends AbstractModel {
     };
 
     setReference(reference) {
-        this.genericRef = new GenericRef(DEFINITION, reference);
+        this.set$ref(reference);
     };
 }

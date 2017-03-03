@@ -1,6 +1,8 @@
 import {HashMap, newHashMap} from "../java/javaUtil";
 import factory from "./factory";
 import {has} from "../java/beanUtils";
+import GenericRef from './refs/GenericRef';
+import RefType from './refs/RefType';
 
 export class Property {
     static allowedProps = ["title", "type", "format", "description", "name", "readOnly", "position", "access", "enum", "example", "externalDocs", "required", ["default", null, "_"]];
@@ -81,6 +83,30 @@ export class RefProperty extends Property {
         if (ref && ref.$ref) this.set$ref(ref.$ref);
         else if (typeof ref === 'string')
             this.set$ref(ref);
+
+    }
+    set$ref(ref){
+        this.genericRef = new GenericRef(RefType.DEFINITION, ref);
+    }
+    get$ref(){
+        return this.genericRef.getRef();
+    }
+    asDefault(ref) {
+        this.set$ref(RefType.DEFINITION.getInternalPrefix() + ref);
+        return this;
+    }
+
+    getSimpleRef() {
+        if (this.genericRef != null) {
+            const simp = this.genericRef.getSimpleRef();
+            return simp;
+        }
+    }
+
+    getRefFormat() {
+        if (this.genericRef != null) {
+            return this.genericRef.getFormat();
+        }
 
     }
 }

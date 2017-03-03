@@ -37,7 +37,7 @@ export default class GenericRef {
 
 
     static computeSimpleRef = function (ref, format, type) {
-        if (format === refs.RefFormat.INTERNAL) {
+        if (format === RefFormat.INTERNAL) {
             return ref.substring(type.getInternalPrefix().length);
         }
         return ref;
