@@ -20,18 +20,18 @@ export default class AbstractGenerator {
             return reader;
         }
         catch (e) {
-            console.error(e.message);
+            Log.trace(e.message);
         }
         throw new Error("can\'t load template " + name);
     }
 
     getTemplateReader(name) {
         try {
-            const f = new File(name);
+            const f = new File("resources", name);
             return fs.readFileSync(f.getPath(), 'utf-8');
         }
         catch (e) {
-            Log.error(e.message);
+            Log.trace(e.message);
         }
 
         throw new Error("can\'t load template " + name);
@@ -58,7 +58,7 @@ export default class AbstractGenerator {
                     return libTemplateFile;
                 }
             }
-            const fp =  "resources" + File.separator + config.embeddedTemplateDir() + File.separator + templateFile;
+            const fp =   config.embeddedTemplateDir() + File.separator + templateFile;
             return fp;
         }
     }
@@ -68,7 +68,7 @@ export default class AbstractGenerator {
     }
 
     embeddedTemplateExists(name) {
-        return new File(name).exists();
+        return new File("resources", name).exists();
     }
 
     getCPResourcePath(name) {

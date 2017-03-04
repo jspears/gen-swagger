@@ -1,7 +1,17 @@
-import StringBuilder from './java/StringBuilder';
+import StringBuilder from "./java/StringBuilder";
 const middle = (templateFile, folder, destinationFilename) => destinationFilename ? [templateFile, folder, destinationFilename] : [templateFile, "", folder]
 
 export default class SupportingFile {
+    constructor(templateFile, folder, destinationFilename) {
+        if (arguments.length == 2) {
+            destinationFilename = folder;
+            folder = '';
+        }
+        this.templateFile = templateFile;
+        this.folder = folder;
+        this.destinationFilename = destinationFilename;
+
+    }
 
     toString() {
         let builder = new StringBuilder("SupportingFile:\n");

@@ -277,7 +277,7 @@ export default class AndroidClientCodegen extends DefaultCodegen {
             this.setSourceFolder(this.__additionalProperties.get(CodegenConstants.SOURCE_FOLDER));
         }
         if (this.__additionalProperties.containsKey(AndroidClientCodegen.USE_ANDROID_MAVEN_GRADLE_PLUGIN)) {
-            this.setUseAndroidMavenGradlePlugin(javaemul.internal.BooleanHelper.valueOf(this.__additionalProperties.get(AndroidClientCodegen.USE_ANDROID_MAVEN_GRADLE_PLUGIN)));
+            this.setUseAndroidMavenGradlePlugin(Boolean(this.__additionalProperties.get(AndroidClientCodegen.USE_ANDROID_MAVEN_GRADLE_PLUGIN)));
         }
         else {
             this.__additionalProperties.put(AndroidClientCodegen.USE_ANDROID_MAVEN_GRADLE_PLUGIN, this.useAndroidMavenGradlePlugin);

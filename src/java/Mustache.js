@@ -1,6 +1,8 @@
 import Mustache from 'Mustache';
+import Json from './Json';
+import LoggerFactory from './LoggerFactory';
 
-
+const Log = LoggerFactory.getLogger('Mustache');
 export default ({
     compiler(){
         let defValue;
@@ -26,6 +28,7 @@ export default ({
 
                 return {
                     execute(data){
+                        Log.info(`transforming ${file}`);
 /*
                          if (data instanceof Map) {
                          const mapProxy = {
@@ -45,7 +48,7 @@ export default ({
                          };
                          data = new Proxy(data, mapProxy)
                          }*/
-                        data = JSON.parse(JSON.stringify(data));
+                        data = JSON.parse(Json.pretty(data));
                         return Mustache.render(template, data, partialProxy)
                     }
                 };

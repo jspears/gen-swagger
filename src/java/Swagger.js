@@ -10,12 +10,14 @@ import {Property} from "../models/properties";
 import Sway from "sway";
 
 ['get', 'post', 'put', 'head', 'patch', 'delete', 'options'].map(function method(name) {
-
-    Path.prototype[`get${name[0].toUpperCase()}${name.substring(1)}`] = function () {
+    this[`get${name[0].toUpperCase()}${name.substring(1)}`] = function () {
         return this.getOperation(name);
 
     }
-});
+}, Path.prototype);
+Path.prototype.toJSON = function(){
+    return this.definition;
+};
 const _asResponse = (r) => [(r.statusCode || 'default') + '', r];
 
 beanify(Object.assign(Operation.prototype, {
@@ -46,8 +48,6 @@ beanify(Object.assign(Operation.prototype, {
 }), ['produces', 'summary', 'tags', 'operationId', 'description', 'externalDocs', 'consumes', 'schemes', 'method', 'securityDefinitions']);
 
 
-
-
 Array.prototype.isEmpty = function () {
     return this.length === 0;
 };
@@ -55,7 +55,7 @@ Array.prototype.isEmpty = function () {
 beanify(Object.assign(Response.prototype, {
     getSchema () {
         if (!this._schema) {
-            this._schema = factory(Object.assign({description:this.definition.description}, this.definition.schema));
+            this._schema = factory(Object.assign({description: this.definition.description}, this.definition.schema));
         }
         return this._schema;
     },

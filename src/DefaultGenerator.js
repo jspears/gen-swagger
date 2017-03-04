@@ -16,15 +16,14 @@ import {
     TreeSet,
     HashSet,
     HashMap,
-    Collections,
-    Arrays
+    Collections
 } from "./java/javaUtil";
 import IOUtils from "./java/IOUtils";
 import AbstractGenerator from "./AbstractGenerator";
 import CodegenConstants from "./CodegenConstants";
 import InlineModelResolver from "./InlineModelResolver";
 import ComposedModel from "./models/ComposedModel";
-import GlobalSupportingFile from './GlobalSupportingFile';
+import GlobalSupportingFile from "./GlobalSupportingFile";
 
 const rethrow = (e, ...args) => {
     Log.trace(e.stack + '');
@@ -432,74 +431,70 @@ export default class DefaultGenerator extends AbstractGenerator {
         if (generateSupportingFiles) {
             for (const support of this.config.supportingFiles()) {
 
-                    try {
-                        let outputFolder = this.config.outputFolder();
-                        if (StringUtils.isNotEmpty(support.folder)) {
-                            outputFolder += File.separator + support.folder;
-                        }
-                        let of = new File(outputFolder);
-                        if (!of.isDirectory()) {
-                            of.mkdirs();
-                        }
-                        let outputFilename = outputFolder + File.separator + (support.destinationFilename || '');
-                        if (!this.config.shouldOverwrite(outputFilename)) {
-                            Log.info("Skipped overwriting " + outputFilename);
-                            continue;
-                        }
-                        let templateFile;
-                        if (support != null && support instanceof GlobalSupportingFile) {
-                            templateFile = this.config.getCommonTemplateDir() + File.separator + (support.templateFile || '');
+                try {
+                    let outputFolder = this.config.outputFolder();
+                    if (StringUtils.isNotEmpty(support.folder)) {
+                        outputFolder += File.separator + support.folder;
+                    }
+                    let of = new File(outputFolder);
+                    if (!of.isDirectory()) {
+                        of.mkdirs();
+                    }
+                    let outputFilename = outputFolder + File.separator + (support.destinationFilename || '');
+                    if (!this.config.shouldOverwrite(outputFilename)) {
+                        Log.info("Skipped overwriting " + outputFilename);
+                        continue;
+                    }
+                    let templateFile;
+                    if (support != null && support instanceof GlobalSupportingFile) {
+                        templateFile = this.config.getCommonTemplateDir() + File.separator + (support.templateFile || '');
+                    }
+                    else {
+                        templateFile = this.getFullTemplateFile(this.config, support.templateFile);
+                    }
+                    let shouldGenerate = true;
+                    if (supportingFilesToGenerate != null && supportingFilesToGenerate.size() > 0) {
+                        if (supportingFilesToGenerate.contains(support.destinationFilename)) {
+                            shouldGenerate = true;
                         }
                         else {
-                            templateFile = this.getFullTemplateFile(this.config, support.templateFile);
+                            shouldGenerate = false;
                         }
-                        let shouldGenerate = true;
-                        if (supportingFilesToGenerate != null && supportingFilesToGenerate.size() > 0) {
-                            if (supportingFilesToGenerate.contains(support.destinationFilename)) {
-                                shouldGenerate = true;
-                            }
-                            else {
-                                shouldGenerate = false;
-                            }
+                    }
+                    if (shouldGenerate) {
+                        if (templateFile.endsWith(".mustache")) {
+                            let template = this.readTemplate(templateFile);
+                            let tmpl = Mustache.compiler().withLoader(new TemplateLocator(this)).defaultValue("").compile(template);
+                            this.writeToFile(outputFilename, tmpl.execute(bundle));
+                            files.add(new File(outputFilename));
                         }
-                        if (shouldGenerate) {
-                            if (((str, searchString) => {
-                                    let pos = str.length - searchString.length;
-                                    let lastIndex = str.indexOf(searchString, pos);
-                                    return lastIndex !== -1 && lastIndex === pos;
-                                })(templateFile, "mustache")) {
-                                let template = this.readTemplate(templateFile);
-                                let tmpl = Mustache.compiler().withLoader(new TemplateLocator(this)).defaultValue("").compile(template);
-                                this.writeToFile(outputFilename, tmpl.execute(bundle));
-                                files.add(new File(outputFilename));
+                        else {
+                            let __in = new File(templateFile);
+                            if (!__in.exists()) {
+                                __in = new File(this.getCPResourcePath(templateFile))
                             }
-                            else {
-                                let __in = new File(templateFile);
-                                if (!__in.exists()) {
-                                    __in = new File(this.getCPResourcePath(templateFile))
-                                }
 
-                                let outputFile = new File(outputFilename);
-                                let out = new File(outputFile, false);
-                                if (__in.exists()) {
-                                    Log.info("writing file " + outputFile);
-                                    IOUtils.copy(__in, out);
-                                }
-                                else {
-                                    if (__in == null) {
-                                        Log.error("can\'t open " + templateFile + " for input");
-                                    }
-                                }
-                                files.add(outputFile);
+                            let outputFile = new File(outputFilename);
+                            let out = new File(outputFile, false);
+                            if (__in.exists()) {
+                                Log.info("writing file " + outputFile);
+                                IOUtils.copy(__in, out);
                             }
-                        }
-                        else {
-                            Log.info("Skipped generation of " + outputFilename + " due to rule in .swagger-codegen-ignore");
+                            else {
+                                if (__in == null) {
+                                    Log.error("can\'t open " + templateFile + " for input");
+                                }
+                            }
+                            files.push(outputFile);
                         }
                     }
-                    catch (e) {
-                        rethrow(e, "Could not generate supporting file \'" + support + "\'", e);
+                    else {
+                        Log.info("Skipped generation of " + outputFilename + " due to rule in .swagger-codegen-ignore");
                     }
+                }
+                catch (e) {
+                    rethrow(e, "Could not generate supporting file \'" + support + "\'", e);
+                }
 
 
             }

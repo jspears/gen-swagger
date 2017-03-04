@@ -25,7 +25,5 @@ describe('DefaultGenerator', function () {
 
 //    it("should generate: android 'petstore-minimal.json'", generate('petstore-minimal.json'));
     it("should generate: android 'uber.json'", generate('uber.json'));
-    it('should camelize', function () {
 
-    })
 });
