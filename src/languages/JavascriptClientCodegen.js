@@ -777,7 +777,7 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
             }
             let lastRequired = null;
             for (const vars of  cm.vars) {
-                if (vars.required != null && vars.required) {
+                if (vars.required) {
                     lastRequired = vars;
                 }
             }
@@ -798,37 +798,29 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
         return !this.__defaultIncludes.contains(type) && !this.__languageSpecificPrimitives.contains(type);
     }
 
-    static
-    reconcileInlineEnums(codegenModel, parentCodegenModel) {
+    static reconcileInlineEnums(codegenModel, parentCodegenModel) {
         if (parentCodegenModel.hasEnums) {
             let parentModelCodegenProperties = parentCodegenModel.vars;
             let codegenProperties = codegenModel.vars;
             let removedChildEnum = false;
-            for (let index243 = parentModelCodegenProperties.iterator(); index243.hasNext();) {
-                let parentModelCodegenPropery = index243.next();
-                {
-                    if (parentModelCodegenPropery.isEnum) {
-                        let iterator = codegenProperties.iterator();
-                        while ((iterator.hasNext())) {
-                            let codegenProperty = iterator.next();
-                            if (codegenProperty.isEnum && codegenProperty.equals(parentModelCodegenPropery)) {
-                                iterator.remove();
-                                removedChildEnum = true;
-                            }
+            for (const parentModelCodegenPropery of parentModelCodegenProperties) {
+                if (parentModelCodegenPropery.isEnum) {
+                    let iterator = codegenProperties.iterator();
+                    while ((iterator.hasNext())) {
+                        let codegenProperty = iterator.next();
+                        if (codegenProperty.isEnum && codegenProperty.equals(parentModelCodegenPropery)) {
+                            iterator.remove();
+                            removedChildEnum = true;
                         }
-                        ;
                     }
                 }
             }
             if (removedChildEnum) {
                 let count = 0;
-                let numVars = codegenProperties.size();
-                for (let index244 = codegenProperties.iterator(); index244.hasNext();) {
-                    let codegenProperty = index244.next();
-                    {
-                        count += 1;
-                        codegenProperty.hasMore = (count < numVars) ? true : null;
-                    }
+                let numVars = codegenProperties.size;
+                for (const codegenProperty of codegenProperties) {
+                    count += 1;
+                    codegenProperty.hasMore = (count < numVars) ? true : null;
                 }
                 codegenModel.vars = codegenProperties;
             }
@@ -836,10 +828,8 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
         return codegenModel;
     }
 
-    static
-    sanitizePackageName(packageName) {
-        packageName = packageName.trim();
-        packageName = packageName.replace(new RegExp("[^a-zA-Z0-9_\\.]", 'g'), "_");
+    static sanitizePackageName(packageName) {
+        packageName = packageName.trim().replace(new RegExp("[^a-zA-Z0-9_\\.]", 'g'), "_");
         if (isEmpty(packageName)) {
             return "invalidPackageName";
         }

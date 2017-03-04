@@ -18,7 +18,7 @@ import {
     UUIDProperty
 } from "../models/properties";
 import Json from "../java/Json";
-import {Arrays, HashMap, HashSet, newHashMap} from "../java/javaUtil";
+import {Arrays, HashMap, newHashMap, newHashSet} from "../java/javaUtil";
 
 export default class ExampleGenerator {
     constructor(examples) {
@@ -26,14 +26,14 @@ export default class ExampleGenerator {
     }
 
     generate(examples, mediaTypes, property) {
-        let output = [];
-        let processedModels = (new HashSet());
+        const output = [];
+        const processedModels = newHashSet();
         if (examples == null) {
             if (mediaTypes == null) {
                 mediaTypes = Arrays.asList("application/json");
             }
             for (const mediaType of mediaTypes) {
-                let kv = newHashMap(["contentType", mediaType]);
+                const kv = newHashMap(["contentType", mediaType]);
                 if (property != null && mediaType.startsWith("application/json")) {
                     let example = Json.pretty(this.resolvePropertyToExample(mediaType, property, processedModels));
                     if (example != null) {
@@ -42,7 +42,7 @@ export default class ExampleGenerator {
                     }
                 }
                 else if (property != null && mediaType.startsWith("application/xml")) {
-                    let example = new XmlExampleGenerator(this.examples).toXml(property);
+                    const example = new XmlExampleGenerator(this.examples).toXml(property);
                     if (example != null) {
                         kv.put("example", example);
                         output.add(kv);
@@ -133,15 +133,10 @@ export default class ExampleGenerator {
         }
         if (model != null && model instanceof ModelImpl) {
             processedModels.add(name);
-            let impl = model;
-            let values = (new HashMap());
-            if (impl.getProperties() != null) {
-                for (let index200 = impl.getProperties().keySet().iterator(); index200.hasNext();) {
-                    let propertyName = index200.next();
-                    {
-                        let property = impl.getProperties().get(propertyName);
-                        values.put(propertyName, this.resolvePropertyToExample(mediaType, property, processedModels));
-                    }
+            let values = newHashMap();
+            if (model.getProperties() != null) {
+                for (const [propertyName, property] of model.getProperties()) {
+                    values.put(propertyName, this.resolvePropertyToExample(mediaType, property, processedModels));
                 }
             }
             return values;

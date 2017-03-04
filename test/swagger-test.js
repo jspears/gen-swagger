@@ -1,4 +1,4 @@
-import Swagger from '../src/swagger/api';
+import Swagger from '../src/java/Swagger';
 import path from 'path';
 import {expect} from 'chai';
 

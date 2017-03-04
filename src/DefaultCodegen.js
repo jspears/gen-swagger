@@ -211,24 +211,18 @@ export default class DefaultCodegen {
                 let enumVars = [];
                 let commonPrefix = this.findCommonPrefixOfVars(values);
                 let truncateIdx = commonPrefix.length;
-                for (let index142 = values.iterator(); index142.hasNext();) {
-                    let value = index142.next();
-                    {
-                        let enumVar = newHashMap();
-                        let enumName;
-                        if (truncateIdx === 0) {
+                for (const value of values) {
+                    let enumName;
+                    if (truncateIdx === 0) {
+                        enumName = value.toString();
+                    }
+                    else {
+                        enumName = value.toString().substring(truncateIdx);
+                        if (("" === enumName)) {
                             enumName = value.toString();
                         }
-                        else {
-                            enumName = value.toString().substring(truncateIdx);
-                            if (("" === enumName)) {
-                                enumName = value.toString();
-                            }
-                        }
-                        enumVar.put("name", this.toEnumVarName(enumName, cm.dataType));
-                        enumVar.put("value", this.toEnumValue(value.toString(), cm.dataType));
-                        enumVars.add(enumVar);
                     }
+                    enumVars.add(newHashMap(["name", this.toEnumVarName(enumName, cm.dataType)], ["value", this.toEnumValue(value.toString(), cm.dataType)]));
                 }
                 cm.allowableValues.put("enumVars", enumVars);
             }
@@ -1120,27 +1114,24 @@ export default class DefaultCodegen {
             if (composed.getInterfaces() != null) {
                 if (m.interfaces == null)
                     m.interfaces = [];
-                for (let index145 = composed.getInterfaces().iterator(); index145.hasNext();) {
-                    let _interface = index145.next();
-                    {
-                        let interfaceModel = null;
+                for (const _interface of composed.getInterfaces()) {
+                    let interfaceModel = null;
+                    if (allDefinitions != null) {
+                        interfaceModel = allDefinitions.get(_interface.getSimpleRef());
+                    }
+                    if (parent == null && (interfaceModel != null && interfaceModel instanceof ModelImpl) && interfaceModel.getDiscriminator() != null) {
+                        parent = _interface;
+                    }
+                    else {
+                        let interfaceRef = this.toModelName(_interface.getSimpleRef());
+                        m.interfaces.add(interfaceRef);
+                        this.addImport(m, interfaceRef);
                         if (allDefinitions != null) {
-                            interfaceModel = allDefinitions.get(_interface.getSimpleRef());
-                        }
-                        if (parent == null && (interfaceModel != null && interfaceModel instanceof ModelImpl) && interfaceModel.getDiscriminator() != null) {
-                            parent = _interface;
-                        }
-                        else {
-                            let interfaceRef = this.toModelName(_interface.getSimpleRef());
-                            m.interfaces.add(interfaceRef);
-                            this.addImport(m, interfaceRef);
-                            if (allDefinitions != null) {
-                                if (this.supportsInheritance) {
-                                    this.addProperties(allProperties, allRequired, interfaceModel, allDefinitions);
-                                }
-                                else {
-                                    this.addProperties(properties, required, interfaceModel, allDefinitions);
-                                }
+                            if (this.supportsInheritance) {
+                                this.addProperties(allProperties, allRequired, interfaceModel, allDefinitions);
+                            }
+                            else {
+                                this.addProperties(properties, required, interfaceModel, allDefinitions);
                             }
                         }
                     }
@@ -1217,11 +1208,8 @@ export default class DefaultCodegen {
             this.addProperties(properties, required, interfaceModel, allDefinitions);
         }
         else if (model != null && model instanceof ComposedModel) {
-            for (let index147 = model.getAllOf().iterator(); index147.hasNext();) {
-                let component = index147.next();
-                {
-                    this.addProperties(properties, required, component, allDefinitions);
-                }
+            for (const component of model.getAllOf()) {
+                this.addProperties(properties, required, component, allDefinitions);
             }
         }
     }
@@ -1266,26 +1254,26 @@ export default class DefaultCodegen {
         property.isReadOnly = p.getReadOnly();
         property.vendorExtensions = p.getVendorExtensions();
         let type = this.getSwaggerType(p);
-        if (p != null && p instanceof AbstractNumericProperty) {
-            let np = p;
+
+        const allowableValues = newHashMap();
+
+        if (p instanceof AbstractNumericProperty) {
+            const np = p;
             property.minimum = np.getMinimum();
             property.maximum = np.getMaximum();
             property.exclusiveMinimum = np.getExclusiveMinimum();
             property.exclusiveMaximum = np.getExclusiveMaximum();
             if (property.minimum != null || property.maximum != null || property.exclusiveMinimum != null || property.exclusiveMaximum != null)
                 property.hasValidation = true;
-            let allowableValues = newHashMap();
+
             if (np.getMinimum() != null) {
                 allowableValues.put("min", np.getMinimum());
             }
             if (np.getMaximum() != null) {
                 allowableValues.put("max", np.getMaximum());
             }
-            if (!allowableValues.isEmpty()) {
-                property.allowableValues = allowableValues;
-            }
         }
-        if (p != null && p instanceof StringProperty) {
+        if (p instanceof StringProperty) {
             let sp = p;
             property.maxLength = sp.getMaxLength();
             property.minLength = sp.getMinLength();
@@ -1293,143 +1281,56 @@ export default class DefaultCodegen {
             if (property.pattern != null || property.minLength != null || property.maxLength != null)
                 property.hasValidation = true;
             property.isString = true;
-            if (sp.getEnum() != null) {
-                let _enum = sp.getEnum();
-                property._enum = _enum;
-                property.isEnum = true;
-                let allowableValues = newHashMap();
-                allowableValues.put("values", _enum);
-                property.allowableValues = allowableValues;
-            }
         }
-        if ((p != null && p instanceof BaseIntegerProperty) && !(p != null && p instanceof IntegerProperty) && !(p != null && p instanceof LongProperty)) {
-            let sp = p;
+        if (( p instanceof BaseIntegerProperty) && !( p instanceof IntegerProperty) && !( p instanceof LongProperty)) {
             property.isInteger = true;
         }
-        if (p != null && p instanceof IntegerProperty) {
-            let sp = p;
+        if (p instanceof IntegerProperty) {
             property.isInteger = true;
-            if (sp.getEnum() != null) {
-                let _enum = sp.getEnum();
-                property._enum = [];
-                for (let index148 = _enum.iterator(); index148.hasNext();) {
-                    let i = index148.next();
-                    {
-                        property._enum.add(i.toString());
-                    }
-                }
-                property.isEnum = true;
-                let allowableValues = newHashMap();
-                allowableValues.put("values", _enum);
-                property.allowableValues = allowableValues;
-            }
         }
-        if (p != null && p instanceof LongProperty) {
-            let sp = p;
+        if (p instanceof LongProperty) {
             property.isLong = true;
-            if (sp.getEnum() != null) {
-                let _enum = sp.getEnum();
-                property._enum = [];
-                for (let index149 = _enum.iterator(); index149.hasNext();) {
-                    let i = index149.next();
-                    {
-                        property._enum.add(i.toString());
-                    }
-                }
-                property.isEnum = true;
-                let allowableValues = newHashMap();
-                allowableValues.put("values", _enum);
-                property.allowableValues = allowableValues;
-            }
         }
-        if (p != null && p instanceof BooleanProperty) {
+        if (p instanceof BooleanProperty) {
             property.isBoolean = true;
         }
-        if (p != null && p instanceof BinaryProperty) {
+        if (p instanceof BinaryProperty) {
             property.isBinary = true;
         }
-        if (p != null && p instanceof UUIDProperty) {
+        if (p instanceof UUIDProperty) {
             property.isString = true;
         }
-        if (p != null && p instanceof ByteArrayProperty) {
+        if (p instanceof ByteArrayProperty) {
             property.isByteArray = true;
         }
-        if ((p != null && p instanceof DecimalProperty) && !(p != null && p instanceof DoubleProperty) && !(p != null && p instanceof FloatProperty)) {
-            let sp = p;
+        if (( p instanceof DecimalProperty) && !( p instanceof DoubleProperty) && !( p instanceof FloatProperty)) {
             property.isFloat = true;
         }
-        if (p != null && p instanceof DoubleProperty) {
-            let sp = p;
+        if (p instanceof DoubleProperty) {
             property.isDouble = true;
-            if (sp.getEnum() != null) {
-                let _enum = sp.getEnum();
-                property._enum = [];
-                for (let index150 = _enum.iterator(); index150.hasNext();) {
-                    let i = index150.next();
-                    {
-                        property._enum.add(i.toString());
-                    }
-                }
-                property.isEnum = true;
-                let allowableValues = newHashMap();
-                allowableValues.put("values", _enum);
-                property.allowableValues = allowableValues;
-            }
         }
-        if (p != null && p instanceof FloatProperty) {
-            let sp = p;
+        if (p instanceof FloatProperty) {
             property.isFloat = true;
-            if (sp.getEnum() != null) {
-                let _enum = sp.getEnum();
-                property._enum = [];
-                for (let index151 = _enum.iterator(); index151.hasNext();) {
-                    let i = index151.next();
-                    {
-                        property._enum.add(i.toString());
-                    }
-                }
-                property.isEnum = true;
-                let allowableValues = newHashMap();
-                allowableValues.put("values", _enum);
-                property.allowableValues = allowableValues;
-            }
         }
-        if (p != null && p instanceof DateProperty) {
-            let sp = p;
+        if (p instanceof DateProperty) {
             property.isDate = true;
-            if (sp.getEnum() != null) {
-                let _enum = sp.getEnum();
-                property._enum = [];
-                for (let index152 = _enum.iterator(); index152.hasNext();) {
-                    let i = index152.next();
-                    {
-                        property._enum.add(i.toString());
-                    }
-                }
-                property.isEnum = true;
-                let allowableValues = newHashMap();
-                allowableValues.put("values", _enum);
-                property.allowableValues = allowableValues;
-            }
         }
-        if (p != null && p instanceof DateTimeProperty) {
-            let sp = p;
+        if (p instanceof DateTimeProperty) {
             property.isDateTime = true;
-            if (sp.getEnum() != null) {
-                let _enum = sp.getEnum();
-                property._enum = [];
-                for (let index153 = _enum.iterator(); index153.hasNext();) {
-                    let i = index153.next();
-                    {
-                        property._enum.add(i.toString());
-                    }
-                }
-                property.isEnum = true;
-                let allowableValues = newHashMap();
-                allowableValues.put("values", _enum);
-                property.allowableValues = allowableValues;
-            }
         }
+        if (p.getEnum() != null) {
+            let _enum = sp.getEnum();
+            property._enum = [];
+            for (const i of _enum) {
+                property._enum.add(i.toString());
+            }
+            property.isEnum = true;
+            allowableValues.put(["values", _enum]);
+        }
+        if (!allowableValues.isEmpty()) {
+            property.allowableValues = allowableValues;
+        }
+
         property.datatype = this.getTypeDeclaration(p);
         property.dataFormat = p.getFormat();
         if (property.isEnum) {
@@ -1641,20 +1542,16 @@ export default class DefaultCodegen {
         if (consumes != null && consumes.length) {
             let c = [];
             let count = 0;
-            for (let index155 = consumes.iterator(); index155.hasNext();) {
-                let key = index155.next();
-                {
-                    let mediaType = newHashMap();
-                    mediaType.put("mediaType", this.escapeText(this.escapeQuotationMark(key)));
-                    count += 1;
-                    if (count < consumes.length) {
-                        mediaType.put("hasMore", "true");
-                    }
-                    else {
-                        mediaType.put("hasMore", null);
-                    }
-                    c.add(mediaType);
+            for (const key of consumes) {
+                let mediaType = newHashMap(["mediaType", this.escapeText(this.escapeQuotationMark(key))]);
+                count += 1;
+                if (count < consumes.length) {
+                    mediaType.put("hasMore", "true");
                 }
+                else {
+                    mediaType.put("hasMore", null);
+                }
+                c.push(mediaType);
             }
             op.consumes = c;
             op.hasConsumes = true;
@@ -1663,8 +1560,6 @@ export default class DefaultCodegen {
         if (operation.getProduces() != null) {
             if (operation.getProduces().length > 0) {
                 produces = operation.getProduces();
-            }
-            else {
             }
         }
         else if (swagger != null && swagger.getProduces() != null && swagger.getProduces().length > 0) {
@@ -1812,18 +1707,15 @@ export default class DefaultCodegen {
                 }
             }
         }
-        for (let index160 = imports.iterator(); index160.hasNext();) {
-            let i = index160.next();
-            {
-                if (this.needToImport(i)) {
-                    op.imports.add(i);
-                }
+        for (const i of imports) {
+            if (this.needToImport(i)) {
+                op.imports.add(i);
             }
         }
         op.bodyParam = bodyParam;
         op.httpMethod = httpMethod.toUpperCase();
         if (this.sortParamsByRequiredFlag) {
-            Collections.sort(allParams, (one, another) => {
+            allParams.sort((one, another) => {
                 let oneRequired = one.required == null ? false : one.required;
                 let anotherRequired = another.required == null ? false : another.required;
                 if (oneRequired === anotherRequired)
@@ -2178,11 +2070,10 @@ export default class DefaultCodegen {
             return Collections.emptyList();
         }
         let secs = [];
-        for (let it = schemes.entrySet().iterator(); it.hasNext();) {
-            let entry = it.next();
-            let schemeDefinition = entry.getValue();
-            let sec = CodegenModelFactory.newInstance(CodegenModelType.SECURITY);
-            sec.name = entry.getKey();
+        let sec;
+        for (const [name, schemeDefinition] of schemes) {
+            sec = CodegenModelFactory.newInstance(CodegenModelType.SECURITY);
+            sec.name = name;
             sec.type = schemeDefinition.getType();
             sec.isCode = sec.isPassword = sec.isApplication = sec.isImplicit = false;
             if (schemeDefinition != null && schemeDefinition instanceof ApiKeyAuthDefinition) {
@@ -2224,28 +2115,23 @@ export default class DefaultCodegen {
                     let scopes = [];
                     let count = 0;
                     let numScopes = oauth2Definition.getScopes().size;
-                    for (let index161 = oauth2Definition.getScopes().entrySet().iterator(); index161.hasNext();) {
-                        let scopeEntry = index161.next();
-                        {
-                            let scope = newHashMap();
-                            scope.put("scope", scopeEntry.getKey());
-                            scope.put("description", scopeEntry.getValue());
-                            count += 1;
-                            if (count < numScopes) {
-                                scope.put("hasMore", "true");
-                            }
-                            else {
-                                scope.put("hasMore", null);
-                            }
-                            scopes.add(scope);
+                    for (const [scope, description] of oauth2Definition.getScopes()) {
+                        const scope = newHashMap(["scope", scope], ["description", description]);
+                        count += 1;
+                        if (count < numScopes) {
+                            scope.put("hasMore", "true");
                         }
+                        else {
+                            scope.put("hasMore", null);
+                        }
+                        scopes.add(scope);
                     }
                     sec.scopes = scopes;
                 }
             }
-            sec.hasMore = it.hasNext();
             secs.add(sec);
         }
+        if (sec) sec.hasMore = false;
         return secs;
     }
 
@@ -2711,11 +2597,8 @@ export default class DefaultCodegen {
 
     buildLibraryCliOption(supportedLibraries) {
         let sb = new StringBuilder("library template (sub-template) to use:");
-        for (let index167 = supportedLibraries.keySet().iterator(); index167.hasNext();) {
-            let lib = index167.next();
-            {
-                sb.append("\n").append(lib).append(" - ").append(supportedLibraries.get(lib));
-            }
+        for (const [key, lib] of supportedLibraries) {
+            sb.append("\n").append(key).append(" - ").append(lib);
         }
         return new CliOption("library", sb.toString());
     }

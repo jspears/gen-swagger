@@ -226,83 +226,71 @@ export default class InlineModelResolver {
         }
         let propsToUpdate = newHashMap();
         let modelsToAdd = newHashMap();
-        for (let index209 = properties.keySet().iterator(); index209.hasNext();) {
-            let key = index209.next();
-            {
-                let property = properties.get(key);
-                if ((property != null && property instanceof ObjectProperty) && property.getProperties() != null && property.getProperties().size() > 0) {
-                    let modelName = this.uniqueName(path + "_" + key);
-                    let op = property;
-                    let model = this.modelFromProperty(op, modelName);
-                    let existing = this.matchGenerated(model);
-                    if (existing != null) {
-                        propsToUpdate.put(key, new RefProperty(existing));
-                    }
-                    else {
-                        propsToUpdate.put(key, new RefProperty(modelName));
-                        modelsToAdd.put(modelName, model);
-                        this.addGenerated(modelName, model);
-                        this.swagger.addDefinition(modelName, model);
-                    }
+        for (const [key, property] of properties) {
+            if ((property != null && property instanceof ObjectProperty) && hasProperties(property.getProperties())) {
+                const modelName = this.uniqueName(path + "_" + key);
+                const op = property;
+                const model = this.modelFromProperty(op, modelName);
+                const existing = this.matchGenerated(model);
+                if (existing != null) {
+                    propsToUpdate.put(key, new RefProperty(existing));
                 }
-                else if (property != null && property instanceof ArrayProperty) {
-                    let ap = property;
-                    let inner = ap.getItems();
-                    if (inner != null && inner instanceof ObjectProperty) {
-                        let op = inner;
-                        if (!(op.getProperties() == null || op.getProperties().isEmpty())) {
-                            this.flattenProperties(op.getProperties(), path);
-                            let modelName = this.uniqueName(path + "_" + key);
-                            let innerModel = this.modelFromProperty(op, modelName);
-                            let existing = this.matchGenerated(innerModel);
-                            if (existing != null) {
-                                ap.setItems(new RefProperty(existing));
-                            }
-                            else {
-                                ap.setItems(new RefProperty(modelName));
-                                this.addGenerated(modelName, innerModel);
-                                this.swagger.addDefinition(modelName, innerModel);
-                            }
+                else {
+                    propsToUpdate.put(key, new RefProperty(modelName));
+                    modelsToAdd.put(modelName, model);
+                    this.addGenerated(modelName, model);
+                    this.swagger.addDefinition(modelName, model);
+                }
+            }
+            else if (property != null && property instanceof ArrayProperty) {
+                let ap = property;
+                let inner = ap.getItems();
+                if (inner != null && inner instanceof ObjectProperty) {
+                    let op = inner;
+                    if (hasProperties(op)) {
+                        this.flattenProperties(op.getProperties(), path);
+                        let modelName = this.uniqueName(path + "_" + key);
+                        let innerModel = this.modelFromProperty(op, modelName);
+                        let existing = this.matchGenerated(innerModel);
+                        if (existing != null) {
+                            ap.setItems(new RefProperty(existing));
+                        }
+                        else {
+                            ap.setItems(new RefProperty(modelName));
+                            this.addGenerated(modelName, innerModel);
+                            this.swagger.addDefinition(modelName, innerModel);
                         }
                     }
                 }
-                else if (property != null && property instanceof MapProperty) {
-                    let mp = property;
-                    let inner = mp.getAdditionalProperties();
-                    if (inner != null && inner instanceof ObjectProperty) {
-                        let op = inner;
-                        if (op.getProperties() != null && op.getProperties().size() > 0) {
-                            this.flattenProperties(op.getProperties(), path);
-                            let modelName = this.uniqueName(path + "_" + key);
-                            let innerModel = this.modelFromProperty(op, modelName);
-                            let existing = this.matchGenerated(innerModel);
-                            if (existing != null) {
-                                mp.setAdditionalProperties(new RefProperty(existing));
-                            }
-                            else {
-                                mp.setAdditionalProperties(new RefProperty(modelName));
-                                this.addGenerated(modelName, innerModel);
-                                this.swagger.addDefinition(modelName, innerModel);
-                            }
+            }
+            else if (property != null && property instanceof MapProperty) {
+                let mp = property;
+                let inner = mp.getAdditionalProperties();
+                if (inner != null && inner instanceof ObjectProperty) {
+                    let op = inner;
+                    if (hasProperties(op)) {
+                        this.flattenProperties(op.getProperties(), path);
+                        let modelName = this.uniqueName(path + "_" + key);
+                        let innerModel = this.modelFromProperty(op, modelName);
+                        let existing = this.matchGenerated(innerModel);
+                        if (existing != null) {
+                            mp.setAdditionalProperties(new RefProperty(existing));
+                        }
+                        else {
+                            mp.setAdditionalProperties(new RefProperty(modelName));
+                            this.addGenerated(modelName, innerModel);
+                            this.swagger.addDefinition(modelName, innerModel);
                         }
                     }
                 }
             }
         }
         if (!(propsToUpdate.isEmpty())) {
-            for (let index210 = propsToUpdate.keySet().iterator(); index210.hasNext();) {
-                let key = index210.next();
-                {
-                    properties.put(key, propsToUpdate.get(key));
-                }
-            }
+            properties.putAll(propsToUpdate);
         }
-        for (let index211 = modelsToAdd.keySet().iterator(); index211.hasNext();) {
-            let key = index211.next();
-            {
-                this.swagger.addDefinition(key, modelsToAdd.get(key));
-                this.addedModels.put(key, modelsToAdd.get(key));
-            }
+        for (const [key, definition] of modelsToAdd) {
+            this.swagger.addDefinition(key, definition);
+            this.addedModels.put(key, definition);
         }
     }
 

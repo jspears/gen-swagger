@@ -15,8 +15,7 @@ import {
     TreeMap,
     TreeSet,
     HashSet,
-    HashMap,
-    Collections
+    HashMap
 } from "./java/javaUtil";
 import IOUtils from "./java/IOUtils";
 import AbstractGenerator from "./AbstractGenerator";
@@ -201,36 +200,29 @@ export default class DefaultGenerator extends AbstractGenerator {
             if (generateModels) {
                 if (modelsToGenerate != null && modelsToGenerate.size() > 0) {
                     let updatedKeys = newHashSet();
-                    for (let index171 = modelKeys.iterator(); index171.hasNext();) {
-                        let m = index171.next();
-                        {
-                            if (modelsToGenerate.contains(m)) {
-                                updatedKeys.add(m);
-                            }
+                    for (const m of modelKeys) {
+                        if (modelsToGenerate.contains(m)) {
+                            updatedKeys.add(m);
                         }
                     }
                     modelKeys = updatedKeys;
                 }
                 let allProcessedModels = new TreeMap(null, new InheritanceTreeSorter(this, definitions));
-                for (let index172 = modelKeys.iterator(); index172.hasNext();) {
-                    let name = index172.next();
-                    {
-                        try {
-                            if (this.config.importMapping().containsKey(name)) {
-                                this.LOGGER.info("Model " + name + " not imported due to import mapping");
-                                continue;
-                            }
-                            let model = definitions.get(name);
-                            let modelMap = (new HashMap());
-                            modelMap.put(name, model);
-                            let models = this.processModels(this.config, modelMap, definitions);
-                            models.put("classname", this.config.toModelName(name));
-                            models.putAll(this.config.additionalProperties());
-                            allProcessedModels.put(name, models);
+                for (const name of modelKeys) {
+                    try {
+                        if (this.config.importMapping().containsKey(name)) {
+                            this.LOGGER.info("Model " + name + " not imported due to import mapping");
+                            continue;
                         }
-                        catch (e) {
-                            rethrow(e, "Could not process model \'" + name + "\'.Please make sure that your schema is correct!", e);
-                        }
+                        let model = definitions.get(name);
+                        let models = this.processModels(this.config, newHashMap([name, model]), definitions);
+
+                        models.put("classname", this.config.toModelName(name));
+                        models.putAll(this.config.additionalProperties());
+                        allProcessedModels.put(name, models);
+                    }
+                    catch (e) {
+                        rethrow(e, "Could not process model \'" + name + "\'.Please make sure that your schema is correct!", e);
                     }
                 }
                 allProcessedModels = this.config.postProcessAllModels(allProcessedModels);
@@ -296,97 +288,90 @@ export default class DefaultGenerator extends AbstractGenerator {
         }
         let paths = this.processPaths(this.swagger.getPaths());
         if (generateApis) {
-            if (apisToGenerate != null && apisToGenerate.size() > 0) {
+            if (!(apisToGenerate == null || apisToGenerate.isEmpty())) {
                 let updatedPaths = (new TreeMap());
-                for (let index177 = paths.keySet().iterator(); index177.hasNext();) {
-                    let m = index177.next();
-                    {
-                        if (apisToGenerate.contains(m)) {
-                            updatedPaths.put(m, paths.get(m));
-                        }
+                for (const [m, p] of paths) {
+                    if (apisToGenerate.contains(m)) {
+                        updatedPaths.put(m, p);
                     }
                 }
                 paths = updatedPaths;
             }
-            for (let index178 = paths.keySet().iterator(); index178.hasNext();) {
-                let tag = index178.next();
-                {
-                    try {
-                        let ops = paths.get(tag);
-                        Collections.sort(ops, (one, another) => {
-                            return ObjectUtils.compare(one.operationId, another.operationId);
-                        });
-                        let operation = this.processOperations(this.config, tag, ops);
-                        operation.put("basePath", basePath);
-                        operation.put("basePathWithoutHost", basePathWithoutHost);
-                        operation.put("contextPath", contextPath);
-                        operation.put("baseName", tag);
-                        operation.put("modelPackage", this.config.modelPackage());
-                        operation.putAll(this.config.additionalProperties());
-                        operation.put("classname", this.config.toApiName(tag));
-                        operation.put("classVarName", this.config.toApiVarName(tag));
-                        operation.put("importPath", this.config.toApiImport(tag));
-                        if (!this.config.vendorExtensions().isEmpty()) {
-                            operation.put("vendorExtensions", this.config.vendorExtensions());
+            for (const [tag, ops] of paths) {
+
+                try {
+                    ops.sort((one, another) => ObjectUtils.compare(one.operationId, another.operationId));
+                    const operation = this.processOperations(this.config, tag, ops);
+                    operation.put("basePath", basePath);
+                    operation.put("basePathWithoutHost", basePathWithoutHost);
+                    operation.put("contextPath", contextPath);
+                    operation.put("baseName", tag);
+                    operation.put("modelPackage", this.config.modelPackage());
+                    operation.putAll(this.config.additionalProperties());
+                    operation.put("classname", this.config.toApiName(tag));
+                    operation.put("classVarName", this.config.toApiVarName(tag));
+                    operation.put("importPath", this.config.toApiImport(tag));
+                    if (!this.config.vendorExtensions().isEmpty()) {
+                        operation.put("vendorExtensions", this.config.vendorExtensions());
+                    }
+                    let sortParamsByRequiredFlag = true;
+                    if (this.config.additionalProperties().containsKey(CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG)) {
+                        sortParamsByRequiredFlag = Boolean(this.config.additionalProperties().get(CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG));
+                    }
+                    operation.put("sortParamsByRequiredFlag", sortParamsByRequiredFlag);
+                    DefaultGenerator.processMimeTypes(this.swagger.getConsumes(), operation, "consumes");
+                    DefaultGenerator.processMimeTypes(this.swagger.getProduces(), operation, "produces");
+                    allOperations.add((new HashMap(operation)));
+                    for (let i = 0; i < allOperations.length; i++) {
+                        let oo = allOperations[i];
+                        if (i < (allOperations.length - 1)) {
+                            oo.put("hasMore", "true");
                         }
-                        let sortParamsByRequiredFlag = true;
-                        if (this.config.additionalProperties().containsKey(CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG)) {
-                            sortParamsByRequiredFlag = Boolean(this.config.additionalProperties().get(CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG));
-                        }
-                        operation.put("sortParamsByRequiredFlag", sortParamsByRequiredFlag);
-                        DefaultGenerator.processMimeTypes(this.swagger.getConsumes(), operation, "consumes");
-                        DefaultGenerator.processMimeTypes(this.swagger.getProduces(), operation, "produces");
-                        allOperations.add((new HashMap(operation)));
-                        for (let i = 0; i < allOperations.length; i++) {
-                            let oo = allOperations[i];
-                            if (i < (allOperations.length - 1)) {
-                                oo.put("hasMore", "true");
+                    }
+                    for (const [templateName] of this.config.apiTemplateFiles()) {
+                        {
+                            let filename = this.config.apiFilename(templateName, tag);
+                            if (!this.config.shouldOverwrite(filename) && new File(filename).exists()) {
+                                Log.info("Skipped overwriting " + filename);
+                                continue;
                             }
-                        }
-                        for (const [templateName] of this.config.apiTemplateFiles()) {
-                            {
-                                let filename = this.config.apiFilename(templateName, tag);
-                                if (!this.config.shouldOverwrite(filename) && new File(filename).exists()) {
-                                    Log.info("Skipped overwriting " + filename);
-                                    continue;
-                                }
-                                let written = this.processTemplateToFile(operation, templateName, filename);
-                                if (written != null) {
-                                    files.add(written);
-                                }
-                            }
-                        }
-                        if (generateApiTests) {
-                            for (const [templateName] of  this.config.apiTestTemplateFiles()) {
-                                let filename = this.config.apiTestFilename(templateName, tag);
-                                if (new File(filename).exists()) {
-                                    Log.info("File exists. Skipped overwriting " + filename);
-                                    continue;
-                                }
-                                let written = this.processTemplateToFile(operation, templateName, filename);
-                                if (written != null) {
-                                    files.add(written);
-                                }
-                            }
-                        }
-                        if (generateApiDocumentation) {
-                            for (const [templateName] of  this.config.apiDocTemplateFiles()) {
-                                let filename = this.config.apiDocFilename(templateName, tag);
-                                if (!this.config.shouldOverwrite(filename) && new File(filename).exists()) {
-                                    Log.info("Skipped overwriting " + filename);
-                                    continue;
-                                }
-                                let written = this.processTemplateToFile(operation, templateName, filename);
-                                if (written != null) {
-                                    files.add(written);
-                                }
+                            let written = this.processTemplateToFile(operation, templateName, filename);
+                            if (written != null) {
+                                files.add(written);
                             }
                         }
                     }
-                    catch (e) {
-                        rethrow(e, "Could not generate api file for \'" + tag + "\'", e);
+                    if (generateApiTests) {
+                        for (const [templateName] of  this.config.apiTestTemplateFiles()) {
+                            let filename = this.config.apiTestFilename(templateName, tag);
+                            if (new File(filename).exists()) {
+                                Log.info("File exists. Skipped overwriting " + filename);
+                                continue;
+                            }
+                            let written = this.processTemplateToFile(operation, templateName, filename);
+                            if (written != null) {
+                                files.add(written);
+                            }
+                        }
+                    }
+                    if (generateApiDocumentation) {
+                        for (const [templateName] of  this.config.apiDocTemplateFiles()) {
+                            let filename = this.config.apiDocFilename(templateName, tag);
+                            if (!this.config.shouldOverwrite(filename) && new File(filename).exists()) {
+                                Log.info("Skipped overwriting " + filename);
+                                continue;
+                            }
+                            let written = this.processTemplateToFile(operation, templateName, filename);
+                            if (written != null) {
+                                files.add(written);
+                            }
+                        }
                     }
                 }
+                catch (e) {
+                    rethrow(e, "Could not generate api file for \'" + tag + "\'", e);
+                }
+
             }
         }
         if (System.getProperty("debugOperations") != null) {
@@ -616,49 +601,38 @@ export default class DefaultGenerator extends AbstractGenerator {
                     let securities = operation.getSecurity();
                     if (securities == null && this.swagger.getSecurity() != null) {
                         securities = [];
-                        for (let index188 = this.swagger.getSecurity().iterator(); index188.hasNext();) {
-                            let sr = index188.next();
-                            {
-                                securities.push(sr.getRequirements());
-                            }
+                        for (const sr of this.swagger.getSecurity()) {
+                            securities.push(sr.getRequirements());
                         }
                     }
                     if (securities == null || securities.isEmpty()) {
                         continue;
                     }
-                    let authMethods = (new HashMap());
-                    for (let index189 = securities.iterator(); index189.hasNext();) {
-                        let security = index189.next();
-                        {
-                            for (let index190 = security.keySet().iterator(); index190.hasNext();) {
-                                let securityName = index190.next();
-                                {
-                                    let securityDefinition = this.fromSecurity(securityName);
-                                    if (securityDefinition != null) {
-                                        if (securityDefinition != null && securityDefinition instanceof OAuth2Definition) {
-                                            let oauth2Definition = securityDefinition;
-                                            let oauth2Operation = new OAuth2Definition();
-                                            oauth2Operation.setType(oauth2Definition.getType());
-                                            oauth2Operation.setAuthorizationUrl(oauth2Definition.getAuthorizationUrl());
-                                            oauth2Operation.setFlow(oauth2Definition.getFlow());
-                                            oauth2Operation.setTokenUrl(oauth2Definition.getTokenUrl());
-                                            oauth2Operation.setScopes((new HashMap()));
-                                            for (let index191 = security.get(securityName).iterator(); index191.hasNext();) {
-                                                let scope = index191.next();
-                                                {
-                                                    if (oauth2Definition.getScopes().containsKey(scope)) {
-                                                        oauth2Operation.addScope(scope, oauth2Definition.getScopes().get(scope));
-                                                    }
-                                                }
-                                            }
-                                            authMethods.put(securityName, oauth2Operation);
-                                        }
-                                        else {
-                                            authMethods.put(securityName, securityDefinition);
+                    let authMethods = newHashMap();
+                    for (const security of securities) {
+                        for (const [securityName,] of security) {
+                            let securityDefinition = this.fromSecurity(securityName);
+                            if (securityDefinition != null) {
+                                if (securityDefinition != null && securityDefinition instanceof OAuth2Definition) {
+                                    let oauth2Definition = securityDefinition;
+                                    let oauth2Operation = new OAuth2Definition();
+                                    oauth2Operation.setType(oauth2Definition.getType());
+                                    oauth2Operation.setAuthorizationUrl(oauth2Definition.getAuthorizationUrl());
+                                    oauth2Operation.setFlow(oauth2Definition.getFlow());
+                                    oauth2Operation.setTokenUrl(oauth2Definition.getTokenUrl());
+                                    oauth2Operation.setScopes((newHashMap()));
+                                    for (const scope of  security.get(securityName)) {
+                                        if (oauth2Definition.getScopes().containsKey(scope)) {
+                                            oauth2Operation.addScope(scope, oauth2Definition.getScopes().get(scope));
                                         }
                                     }
+                                    authMethods.put(securityName, oauth2Operation);
+                                }
+                                else {
+                                    authMethods.put(securityName, securityDefinition);
                                 }
                             }
+
                         }
                     }
                     if (!authMethods.isEmpty()) {
@@ -730,50 +704,42 @@ export default class DefaultGenerator extends AbstractGenerator {
     }
 
     processModels(config, definitions, allDefinitions) {
-        let objs = (new HashMap());
-        objs.put("package", config.modelPackage());
-        let models = [];
-        let allImports = (new LinkedHashSet());
-        for (let index195 = definitions.keySet().iterator(); index195.hasNext();) {
-            let key = index195.next();
-            {
-                let mm = definitions.get(key);
-                let cm = config.fromModel(key, mm, allDefinitions);
-                let mo = (new HashMap());
-                mo.put("model", cm);
-                mo.put("importPath", config.toModelImport(cm.classname));
-                models.push(mo);
-                allImports.addAll(cm.imports);
+        const models = [];
+        const imports = [];
+
+        const objs = newHashMap(
+            ["package", config.modelPackage()],
+            ["models", models],
+            ["imports", imports]
+        );
+
+        const allImports = newHashSet();
+        const importSet = newHashSet();
+
+        for (const [key, mm] of definitions) {
+            const cm = config.fromModel(key, mm, allDefinitions);
+            models.push(newHashMap(
+                ["model", cm],
+                ["importPath", config.toModelImport(cm.classname)
+                ]));
+            allImports.addAll(cm.imports);
+        }
+        for (const nextImport of allImports) {
+            let mapping = config.importMapping().get(nextImport);
+            if (mapping == null) {
+                mapping = config.toModelImport(nextImport);
+            }
+            if (mapping != null && !config.defaultIncludes().contains(mapping)) {
+                importSet.add(mapping);
+            }
+            mapping = config.instantiationTypes().get(nextImport);
+            if (mapping != null && !config.defaultIncludes().contains(mapping)) {
+                importSet.add(mapping);
             }
         }
-        objs.put("models", models);
-        let importSet = newHashSet();
-        for (let index196 = allImports.iterator(); index196.hasNext();) {
-            let nextImport = index196.next();
-            {
-                let mapping = config.importMapping().get(nextImport);
-                if (mapping == null) {
-                    mapping = config.toModelImport(nextImport);
-                }
-                if (mapping != null && !config.defaultIncludes().contains(mapping)) {
-                    importSet.add(mapping);
-                }
-                mapping = config.instantiationTypes().get(nextImport);
-                if (mapping != null && !config.defaultIncludes().contains(mapping)) {
-                    importSet.add(mapping);
-                }
-            }
+        for (const s of importSet) {
+            imports.add(newHashMap(["import", s]));
         }
-        let imports = [];
-        for (let index197 = importSet.iterator(); index197.hasNext();) {
-            let s = index197.next();
-            {
-                let item = (new HashMap());
-                item.put("import", s);
-                imports.add(item);
-            }
-        }
-        objs.put("imports", imports);
         config.postProcessModels(objs);
         return objs;
     }

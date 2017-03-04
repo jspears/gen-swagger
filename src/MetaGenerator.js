@@ -1,18 +1,15 @@
 import Mustache from "./java/Mustache";
-import StringBuilder from './java/StringBuilder';
-
+import StringBuilder from "./java/StringBuilder";
 import File from "./java/File";
 import {ArrayList} from "./java/javaUtil";
-import {HashMap} from "./java/javaUtil";
-import ServiceLoader from './java/ServiceLoader';
-import FileUtils from './java/FileUtils'
-
+import ServiceLoader from "./java/ServiceLoader";
+import FileUtils from "./java/FileUtils";
 /**
  * @deprecated use instead {@link io.swagger.codegen.DefaultGenerator}
  * or cli interface from https://github.com/swagger-api/swagger-codegen/pull/547
  */
-import AbstractGenerator from './AbstractGenerator';
-import {Options, BasicParser} from './java/cli';
+import AbstractGenerator from "./AbstractGenerator";
+import {Options, BasicParser} from "./java/cli";
 
 export default class MetaGenerator extends AbstractGenerator {
     static config = newHashMap();
@@ -87,7 +84,6 @@ export default class MetaGenerator extends AbstractGenerator {
             MetaGenerator.usage(options);
             return;
         }
-        ;
         MetaGenerator.Log().info("writing to folder " + outputFolder);
         let outputFolderLocation = new File(outputFolder);
         if (!outputFolderLocation.exists()) {
@@ -101,53 +97,47 @@ export default class MetaGenerator extends AbstractGenerator {
         if (!resourcesFolder.exists()) {
             resourcesFolder.mkdirs();
         }
-        let mainClass = javaemul.internal.CharacterHelper.toUpperCase(name.charAt(0)) + name.substring(1) + "Generator";
-        let supportingFiles = (new ArrayList());
-        supportingFiles.add(new codegen.SupportingFile("pom.mustache", "", "pom.xml"));
-        supportingFiles.add(new codegen.SupportingFile("generatorClass.mustache", "src/main/java/" + File.separator + targetPackage.split('.').join(File.separatorChar), mainClass + ".java"));
-        supportingFiles.add(new codegen.SupportingFile("README.mustache", "", "README.md"));
-        supportingFiles.add(new codegen.SupportingFile("api.template", "src/main/resources" + File.separator + name, "api.mustache"));
-        supportingFiles.add(new codegen.SupportingFile("model.template", "src/main/resources" + File.separator + name, "model.mustache"));
-        supportingFiles.add(new codegen.SupportingFile("services.mustache", "src/main/resources/META-INF/services", "io.swagger.codegen.CodegenConfig"));
-        let files = (new ArrayList());
-        let data = (new HashMap());
-        data.put("generatorPackage", targetPackage);
-        data.put("generatorClass", mainClass);
-        data.put("name", name);
-        data.put("fullyQualifiedGeneratorClass", targetPackage + "." + mainClass);
-        for (let index257 = supportingFiles.iterator(); index257.hasNext();) {
-            let support = index257.next();
-            {
-                try {
-                    let destinationFolder = outputFolder;
-                    if (support.folder != null && !("" === support.folder)) {
-                        destinationFolder += File.separator + support.folder;
-                    }
-                    let of = new File(destinationFolder);
-                    if (!of.isDirectory()) {
-                        of.mkdirs();
-                    }
-                    let outputFilename = destinationFolder + File.separator + support.destinationFilename;
-                    if (((str, searchString) => {
-                            let pos = str.length - searchString.length;
-                            let lastIndex = str.indexOf(searchString, pos);
-                            return lastIndex !== -1 && lastIndex === pos;
-                        })(support.templateFile, "mustache")) {
-                        let template = this.readTemplate(templateDir + File.separator + support.templateFile);
-                        let tmpl = Mustache.compiler().withLoader(new TemplateLoader(this, templateDir)).defaultValue("").compile(template);
-                        this.writeToFile(outputFilename, tmpl.execute(data));
-                        files.add(new File(outputFilename));
-                    }
-                    else {
-                        let template = this.readTemplate(templateDir + File.separator + support.templateFile);
-                        FileUtils.writeStringToFile(new File(outputFilename), template);
-                        Log.info("copying file to " + outputFilename);
-                        files.add(new File(outputFilename));
-                    }
+        let mainClass = name[0].toUpperCase() + name.substring(1) + "Generator";
+        let supportingFiles = [];
+        supportingFiles.add(new SupportingFile("pom.mustache", "", "pom.xml"));
+        supportingFiles.add(new SupportingFile("generatorClass.mustache", "src/main/java/" + File.separator + targetPackage.split('.').join(File.separatorChar), mainClass + ".java"));
+        supportingFiles.add(new SupportingFile("README.mustache", "", "README.md"));
+        supportingFiles.add(new SupportingFile("api.template", "src/main/resources" + File.separator + name, "api.mustache"));
+        supportingFiles.add(new SupportingFile("model.template", "src/main/resources" + File.separator + name, "model.mustache"));
+        supportingFiles.add(new SupportingFile("services.mustache", "src/main/resources/META-INF/services", "io.swagger.codegen.CodegenConfig"));
+        let files = [];
+        let data = newHashMap(
+            ["generatorPackage", targetPackage],
+            ["generatorClass", mainClass],
+            ["name", name],
+            ["fullyQualifiedGeneratorClass", targetPackage + "." + mainClass]
+        );
+        for (const support of supportingFiles) {
+            try {
+                let destinationFolder = outputFolder;
+                if (support.folder != null && !("" === support.folder)) {
+                    destinationFolder += File.separator + support.folder;
                 }
-                catch (e) {
-                    Log.trace(e);
+                let of = new File(destinationFolder);
+                if (!of.isDirectory()) {
+                    of.mkdirs();
                 }
+                let outputFilename = destinationFolder + File.separator + support.destinationFilename;
+                if (support.templateFile.endsWith(".mustache")) {
+                    let template = this.readTemplate(templateDir + File.separator + support.templateFile);
+                    let tmpl = Mustache.compiler().withLoader(new TemplateLoader(this, templateDir)).defaultValue("").compile(template);
+                    this.writeToFile(outputFilename, tmpl.execute(data));
+                    files.add(new File(outputFilename));
+                }
+                else {
+                    let template = this.readTemplate(templateDir + File.separator + support.templateFile);
+                    FileUtils.writeStringToFile(new File(outputFilename), template);
+                    Log.info("copying file to " + outputFilename);
+                    files.add(new File(outputFilename));
+                }
+            }
+            catch (e) {
+                Log.trace(e);
             }
         }
     }
@@ -155,8 +145,8 @@ export default class MetaGenerator extends AbstractGenerator {
 
 }
 (function () {
-    let extensions = MetaGenerator.getExtensions();
-    let sb = new StringBuilder();
+    const extensions = MetaGenerator.getExtensions();
+    const sb = new StringBuilder();
     for (const config of extensions) {
 
         if (sb.toString().length !== 0) {
@@ -177,4 +167,7 @@ class TemplateLoader {
     getTemplate(name) {
         return this.__parent.getTemplateReader(this.templateDir + File.separator + name + ".mustache");
     }
+}
+if (require.main == module) {
+    MetaGenerator.main(process.argv);
 }

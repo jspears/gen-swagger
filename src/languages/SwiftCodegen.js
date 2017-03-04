@@ -7,7 +7,7 @@ import {HashSet, HashMap, Arrays} from "../java/javaUtil";
 import {ArrayProperty, MapProperty} from "../models/properties";
 import StringUtils from "../java/StringUtils";
 import File from "../java/File";
-import {HeaderParameter} from '../models/parameters';
+import {HeaderParameter} from "../models/parameters";
 import {parseBoolean} from "../java/BooleanHelper";
 
 const ArrayUtils = {
@@ -15,7 +15,6 @@ const ArrayUtils = {
         return arr && arr.indexOf(val) > -1;
     }
 };
-
 export default class SwiftCodegen extends DefaultCodegen {
     constructor() {
         super();
@@ -249,14 +248,8 @@ export default class SwiftCodegen extends DefaultCodegen {
         if (codegenProperty.isEnum) {
             let swiftEnums = (new ArrayList());
             let values = codegenProperty.allowableValues.get("values");
-            for (let index256 = values.iterator(); index256.hasNext();) {
-                let value = index256.next();
-                {
-                    let map = (new HashMap());
-                    map.put("enum", this.toSwiftyEnumName(/* valueOf */ new String(value).toString()));
-                    map.put("raw", /* valueOf */ new String(value).toString());
-                    swiftEnums.add(map);
-                }
+            for (const value of values) {
+                swiftEnums.add(newHashMap(["enum", this.toSwiftyEnumName('' + value)], ["raw", '' + value]));
             }
             codegenProperty.allowableValues.put("values", swiftEnums);
             codegenProperty.datatypeWithEnum = this.toEnumName(codegenProperty);
@@ -272,7 +265,7 @@ export default class SwiftCodegen extends DefaultCodegen {
             return value;
         }
         let separators = ['-', '_', ' ', ':'];
-        return WordUtils.capitalizeFully.apply(null, [StringUtils.lowerCase(value)].concat(separators)).replace(new RegExp("[-_  :]", 'g'), "");
+        return capitalizeFully(value.toLowerCase(), separators).replace(new RegExp("[-_  :]", 'g'), "");
     }
 
     toApiName(name) {

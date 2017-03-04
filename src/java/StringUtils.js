@@ -19,6 +19,24 @@ function indexOfDifference(cs1, cs2) {
 
     return INDEX_NOT_FOUND;
 }
+const smallWords = /^(a|an|and|as|at|but|by|en|for|if|in|nor|of|on|or|per|the|to|vs?\.?|via)$/i;
+
+const capitalizeFully$inner = function (match, index, title) {
+    if (index > 0 && index + match.length !== title.length
+        && match.match(smallWords) && title[index - 2] !== ":"
+        && (title[index + match.length] !== '-' || title[index - 1] === '-')
+        && !title[index - 1].match(/[^\s-]/)) {
+        return match.toLowerCase();
+    }
+
+    if (match.substr(1).match(/[A-Z]|\../)) {
+        return match;
+    }
+
+    return match[0].toUpperCase() + match.substr(1);
+};
+
+export const capitalizeFully = () => str.replace(/[A-Za-z0-9\u00C0-\u00FF]+[^\s-]*/g, capitalizeFully$inner);
 
 export function getCommonPrefix(...strs) {
     if (strs.length == 0) {
@@ -92,6 +110,7 @@ export const compareTo = (value, anotherString) => {
 };
 
 export default ({
+    capitalizeFully,
     compareTo,
     join,
     snakeCase,
