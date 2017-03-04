@@ -1,5 +1,5 @@
 import AbstractSecuritySchemeDefinition from "./AbstractSecuritySchemeDefinition";
-import {newHashMap} from '../../java/javaUtil';
+import {newHashMap} from "../../java/javaUtil";
 
 export default class OAuth2Definition extends AbstractSecuritySchemeDefinition {
     type = "oauth2";
@@ -83,7 +83,7 @@ export default class OAuth2Definition extends AbstractSecuritySchemeDefinition {
     };
 
     toJSON() {
-        return Object.extend(super.toJSON(), {
+        return Object.assign(super.toJSON(), {
             type: this.type,
             scopes: this.scopes,
             flow: this.flow,

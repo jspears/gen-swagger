@@ -1,11 +1,7 @@
 import AbstractModel from './AbstractModel';
 
 export default class ArrayModel extends AbstractModel {
-
-    constructor() {
-        super();
-        this.type = "array";
-    }
+    type = "array";
 
     description(description) {
         this.setDescription(description);

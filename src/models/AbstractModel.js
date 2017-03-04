@@ -1,10 +1,7 @@
 import {newHashMap} from "../java/javaUtil";
 
 export default class AbstractModel {
-    constructor() {
-
-        this.vendorExtensions = newHashMap();
-    }
+    vendorExtensions = newHashMap();
 
     getExternalDocs() {
         return this.externalDocs;
@@ -27,10 +24,7 @@ export default class AbstractModel {
     };
 
     setVendorExtension(name, value) {
-        if (name instanceof Map) {
-
-            this.vendorExtensions = name;
-        } else if (typeof name === 'string' && name.startsWith("x-")) {
+        if (typeof name === 'string' && name.startsWith("x-")) {
             this.vendorExtensions.put(name, value);
         }
     };

@@ -1,42 +1,49 @@
 import Mustache from "./java/Mustache";
-import StringBuilder from "./java/StringBuilder";
 import File from "./java/File";
-import {ArrayList} from "./java/javaUtil";
+import {newHashMap} from "./java/javaUtil";
 import ServiceLoader from "./java/ServiceLoader";
 import FileUtils from "./java/FileUtils";
+import {HelpFormatter, Options, BasicParser} from "./java/cli";
+import LogFactory from './java/LoggerFactory';
+import SupportingFile from './SupportingFile';
 /**
  * @deprecated use instead {@link io.swagger.codegen.DefaultGenerator}
  * or cli interface from https://github.com/swagger-api/swagger-codegen/pull/547
  */
 import AbstractGenerator from "./AbstractGenerator";
-import {Options, BasicParser} from "./java/cli";
 
 export default class MetaGenerator extends AbstractGenerator {
-    static config = newHashMap();
+    config = newHashMap();
+
+    formatter = new HelpFormatter();
 
     static main(args) {
         return new MetaGenerator().generate(args);
     }
 
     static getExtensions() {
-        let loader = ServiceLoader.load("io.swagger.codegen.CodegenConfig");
-        let output = []
-        for (const load of loader) {
-            output.push(load);
-        }
-        return output;
+        return ServiceLoader.load("io.swagger.codegen.CodegenConfig");
     }
 
-    static usage(options) {
-        // let formatter = new HelpFormatter();
-        //formatter.printHelp("MetaGenerator. Generator for creating a new template set and configuration for Codegen.  The output will be based on the language you specify, and includes default templates to include.", options);
+    usage(options) {
+        this.formatter.printHelp("MetaGenerator. Generator for creating a new template set and configuration for Codegen.  The output will be based on the language you specify, and includes default templates to include.", options);
     }
 
-    static getConfig(name) {
-        if (MetaGenerator.config.containsKey(name)) {
-            return MetaGenerator.config.get(name);
+    getConfig(name) {
+        return this.config.get(name);
+    }
+
+    getConfigString() {
+        if (!this._configString) {
+            const extensions = MetaGenerator.getExtensions();
+            const names = [];
+            for (const config of extensions) {
+                names.push(config.getName());
+                this.config.put(config.getName(), config);
+            }
+            this._configString = names.join(', ');
         }
-        return null;
+        return this._configString;
     }
 
     generate(args) {
@@ -46,16 +53,16 @@ export default class MetaGenerator extends AbstractGenerator {
         let templateDir = "codegen";
         let options = new Options();
         options.addOption("h", "help", false, "shows this message");
-        options.addOption("l", "lang", false, "client language to generate.\nAvailable languages include:\n\t[" + MetaGenerator.configString + "]");
+        options.addOption("l", "lang", false, "client language to generate. Available languages include: [" + this.getConfigString() + "]");
         options.addOption("o", "output", true, "where to write the generated files");
         options.addOption("n", "name", true, "the human-readable name of the generator");
         options.addOption("p", "package", true, "the package to put the main class into (defaults to io.swagger.codegen");
         let cmd = null;
         try {
-            let parser = new BasicParser();
+            const parser = new BasicParser();
             cmd = parser.parse(options, args);
             if (cmd.hasOption("h")) {
-                MetaGenerator.usage(options);
+                this.usage(options);
                 return;
             }
             if (cmd.hasOption("n")) {
@@ -63,7 +70,7 @@ export default class MetaGenerator extends AbstractGenerator {
             }
             else {
                 console.info("name is required");
-                MetaGenerator.usage(options);
+                this.usage(options);
                 return;
             }
             if (cmd.hasOption("l")) {
@@ -76,15 +83,15 @@ export default class MetaGenerator extends AbstractGenerator {
             }
             else {
                 console.info("output folder is required");
-                MetaGenerator.usage(options);
+                this.usage(options);
                 return;
             }
         }
         catch (e) {
-            MetaGenerator.usage(options);
+            this.usage(options);
             return;
         }
-        MetaGenerator.Log().info("writing to folder " + outputFolder);
+        Log.info("writing to folder " + outputFolder);
         let outputFolderLocation = new File(outputFolder);
         if (!outputFolderLocation.exists()) {
             outputFolderLocation.mkdirs();
@@ -98,13 +105,14 @@ export default class MetaGenerator extends AbstractGenerator {
             resourcesFolder.mkdirs();
         }
         let mainClass = name[0].toUpperCase() + name.substring(1) + "Generator";
-        let supportingFiles = [];
-        supportingFiles.add(new SupportingFile("pom.mustache", "", "pom.xml"));
-        supportingFiles.add(new SupportingFile("generatorClass.mustache", "src/main/java/" + File.separator + targetPackage.split('.').join(File.separatorChar), mainClass + ".java"));
-        supportingFiles.add(new SupportingFile("README.mustache", "", "README.md"));
-        supportingFiles.add(new SupportingFile("api.template", "src/main/resources" + File.separator + name, "api.mustache"));
-        supportingFiles.add(new SupportingFile("model.template", "src/main/resources" + File.separator + name, "model.mustache"));
-        supportingFiles.add(new SupportingFile("services.mustache", "src/main/resources/META-INF/services", "io.swagger.codegen.CodegenConfig"));
+        let supportingFiles = [
+            new SupportingFile("pom.mustache", "", "pom.xml"),
+            new SupportingFile("generatorClass.mustache", "src/main/java/" + File.separator + targetPackage.split('.').join(File.separatorChar), mainClass + ".java"),
+            new SupportingFile("README.mustache", "", "README.md"),
+            new SupportingFile("api.template", "src/main/resources" + File.separator + name, "api.mustache"),
+            new SupportingFile("model.template", "src/main/resources" + File.separator + name, "model.mustache"),
+            new SupportingFile("services.mustache", "src/main/resources/META-INF/services", "io.swagger.codegen.CodegenConfig")
+        ];
         let files = [];
         let data = newHashMap(
             ["generatorPackage", targetPackage],
@@ -144,19 +152,9 @@ export default class MetaGenerator extends AbstractGenerator {
 
 
 }
-(function () {
-    const extensions = MetaGenerator.getExtensions();
-    const sb = new StringBuilder();
-    for (const config of extensions) {
 
-        if (sb.toString().length !== 0) {
-            sb.append(", ");
-        }
-        sb.append(config.getName());
-        MetaGenerator.config.put(config.getName(), config);
-    }
-    MetaGenerator.configString = sb.toString();
-})();
+
+const Log = LogFactory.getLogger(MetaGenerator);
 
 class TemplateLoader {
     constructor(__parent, templateDir) {

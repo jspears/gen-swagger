@@ -1,11 +1,8 @@
 import {Collections, newHashMap, HashMap} from "../java/javaUtil";
 import AbstractModel from "./AbstractModel";
-export default class ModelImpl extends AbstractModel {
-    constructor() {
-        super();
-        this.__isSimple = false;
-    }
 
+export default class ModelImpl extends AbstractModel {
+    __isSimple = false;
     _enum(value) {
         var _this = this;
         if (Array.isArray(value)) {

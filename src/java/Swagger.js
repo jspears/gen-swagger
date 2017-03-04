@@ -8,7 +8,10 @@ import parameterFactory from "../models/parameters";
 import {beanify, beanProxy, apply} from "./beanUtils";
 import {Property} from "../models/properties";
 import Sway from "sway";
-
+/**
+ * This class fixes up Sway so that it can work as the model for swagger-codegen.
+ *
+ */
 ['get', 'post', 'put', 'head', 'patch', 'delete', 'options'].map(function method(name) {
     this[`get${name[0].toUpperCase()}${name.substring(1)}`] = function () {
         return this.getOperation(name);
@@ -95,20 +98,21 @@ SwaggerApi.prototype.addDefinition = function (name, definition) {
 
 class Info {
     getContact() {
-        return beanProxy(this.info);
+        return beanProxy(this.contact);
     }
-
     getLicense() {
         return beanProxy(this.license);
     }
 }
 
-beanify(Info, ['title', 'description', 'version', 'title', 'termsOfService']);
+
+beanify(Info.prototype, ['title', 'description', 'version', 'title', 'termsOfService']);
 
 SwaggerApi.prototype.getInfo = function () {
     if (!this._info) {
         this._info = apply(new Info(), this.info);
     }
+    return this._info;
 };
 
 beanify(SwaggerApi.prototype, ['info', 'host', 'basePath', 'tags', 'schemes', 'produces', 'consumes', 'security', 'paths',
