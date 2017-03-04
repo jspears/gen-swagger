@@ -8,11 +8,10 @@ import CodegenType from "../CodegenType";
 import DefaultCodegen from "../DefaultCodegen";
 import SupportingFile from "../SupportingFile";
 import StringUtils, {isEmpty} from "../java/StringUtils";
-import ArrayModel from "../ArrayModel";
-import ModelImpl from "../ModelImpl";
-import Operation from "../Operation";
-import Swagger from "../Swagger";
+import ArrayModel from "../models/ArrayModel";
+import ModelImpl from "../models/ModelImpl";
 import {
+    Property,
     ArrayProperty,
     BooleanProperty,
     DateProperty,
@@ -27,9 +26,11 @@ import {
 } from "../models/properties";
 import LoggerFactory from "../java/LoggerFactory";
 import File from "../java/File";
-import {Arrays, HashSet} from "../java/javaUtil";
+import {Arrays, HashSet, newHashMap} from "../java/javaUtil";
+import {parseBoolean} from "../java/BooleanHelper";
+import StringBuilder from "../java/StringBuilder";
 
-export class JavascriptClientCodegen extends DefaultCodegen {
+export default class JavascriptClientCodegen extends DefaultCodegen {
     constructor() {
         super();
         this.sourceFolder = "src";
@@ -134,19 +135,19 @@ export class JavascriptClientCodegen extends DefaultCodegen {
             this.setInvokerPackage(this.__additionalProperties.get(CodegenConstants.INVOKER_PACKAGE));
         }
         if (this.__additionalProperties.containsKey(JavascriptClientCodegen.USE_PROMISES)) {
-            this.setUsePromises(javaemul.internal.BooleanHelper.parseBoolean(this.__additionalProperties.get(JavascriptClientCodegen.USE_PROMISES)));
+            this.setUsePromises(parseBoolean(this.__additionalProperties.get(JavascriptClientCodegen.USE_PROMISES)));
         }
         if (this.__additionalProperties.containsKey(JavascriptClientCodegen.USE_INHERITANCE)) {
-            this.setUseInheritance(javaemul.internal.BooleanHelper.parseBoolean(this.__additionalProperties.get(JavascriptClientCodegen.USE_INHERITANCE)));
+            this.setUseInheritance(parseBoolean(this.__additionalProperties.get(JavascriptClientCodegen.USE_INHERITANCE)));
         }
         else {
             this.supportsInheritance = true;
         }
         if (this.__additionalProperties.containsKey(JavascriptClientCodegen.EMIT_MODEL_METHODS)) {
-            this.setEmitModelMethods(javaemul.internal.BooleanHelper.parseBoolean(this.__additionalProperties.get(JavascriptClientCodegen.EMIT_MODEL_METHODS)));
+            this.setEmitModelMethods(parseBoolean(this.__additionalProperties.get(JavascriptClientCodegen.EMIT_MODEL_METHODS)));
         }
         if (this.__additionalProperties.containsKey(JavascriptClientCodegen.EMIT_JS_DOC)) {
-            this.setEmitJSDoc(javaemul.internal.BooleanHelper.parseBoolean(this.__additionalProperties.get(JavascriptClientCodegen.EMIT_JS_DOC)));
+            this.setEmitJSDoc(parseBoolean(this.__additionalProperties.get(JavascriptClientCodegen.EMIT_JS_DOC)));
         }
     }
 
@@ -329,11 +330,11 @@ export class JavascriptClientCodegen extends DefaultCodegen {
         if (("_" === name)) {
             name = "_u";
         }
-        if (name.matches("^[A-Z_]*$")) {
+        if (name.match("^[A-Z_]*$")) {
             return name;
         }
         name = DefaultCodegen.camelize(name, true);
-        if (this.isReservedWord(name) || name.matches("^\\d.*")) {
+        if (this.isReservedWord(name) || name.match("^\\d.*")) {
             name = this.escapeReservedWord(name);
         }
         return name;
@@ -357,7 +358,7 @@ export class JavascriptClientCodegen extends DefaultCodegen {
             Log.warn(name + " (reserved word) cannot be used as model name. Renamed to " + modelName);
             return modelName;
         }
-        if (name.matches("^\\d.*")) {
+        if (name.match("^\\d.*")) {
             let modelName = "Model" + name;
             Log.warn(name + " (model name starts with number) cannot be used as model name. Renamed to " + modelName);
             return modelName;
@@ -378,24 +379,19 @@ export class JavascriptClientCodegen extends DefaultCodegen {
     }
 
     getTypeDeclaration(p) {
-        if (((p != null && (p["__interfaces"] != null && p["__interfaces"].indexOf("io.swagger.models.properties.Property") >= 0 || p.constructor != null && p.constructor["__interfaces"] != null && p.constructor["__interfaces"].indexOf("io.swagger.models.properties.Property") >= 0)) || p === null)) {
-            let __args = Array.prototype.slice.call(arguments);
-            return (() => {
-                if (p != null && p instanceof ArrayProperty) {
-                    let ap = p;
-                    let inner = ap.getItems();
-                    return "[" + this.getTypeDeclaration(inner) + "]";
-                }
-                else if (p != null && p instanceof MapProperty) {
-                    let mp = p;
-                    let inner = mp.getAdditionalProperties();
-                    return "{String: " + this.getTypeDeclaration(inner) + "}";
-                }
-                return super.getTypeDeclaration(p);
-            })();
+        if (p instanceof Property) {
+            if (p != null && p instanceof ArrayProperty) {
+                let ap = p;
+                let inner = ap.getItems();
+                return "[" + this.getTypeDeclaration(inner) + "]";
+            }
+            else if (p != null && p instanceof MapProperty) {
+                let mp = p;
+                let inner = mp.getAdditionalProperties();
+                return "{String: " + this.getTypeDeclaration(inner) + "}";
+            }
         }
-        else
-            throw new Error('invalid overload');
+        return super.getTypeDeclaration(p);
     }
 
     toDefaultValue(p) {
@@ -554,85 +550,69 @@ export class JavascriptClientCodegen extends DefaultCodegen {
     }
 
     fromOperation(path, httpMethod, operation, definitions, swagger) {
-        if (((typeof path === 'string') || path === null) && ((typeof httpMethod === 'string') || httpMethod === null) && ((operation != null && operation instanceof Operation) || operation === null) && ((definitions != null && (definitions["__interfaces"] != null && definitions["__interfaces"].indexOf("java.util.Map") >= 0 || definitions.constructor != null && definitions.constructor["__interfaces"] != null && definitions.constructor["__interfaces"].indexOf("java.util.Map") >= 0)) || definitions === null) && ((swagger != null && swagger instanceof Swagger) || swagger === null)) {
-            let __args = Array.prototype.slice.call(arguments);
-            return (() => {
-                let op = super.fromOperation(path, httpMethod, operation, definitions, swagger);
-                if (op.returnType != null) {
-                    op.returnType = this.normalizeType(op.returnType);
+        if (arguments.length > 4) {
+            let op = super.fromOperation(path, httpMethod, operation, definitions, swagger);
+            if (op.returnType != null) {
+                op.returnType = this.normalizeType(op.returnType);
+            }
+            op.path = this.sanitizePath(op.path);
+            let lastRequired = null;
+            let lastOptional = null;
+            for (const p of op.allParams) {
+                if (p.required != null && p.required) {
+                    lastRequired = p;
                 }
-                op.path = this.sanitizePath(op.path);
-                let lastRequired = null;
-                let lastOptional = null;
-                for (let index233 = op.allParams.iterator(); index233.hasNext();) {
-                    let p = index233.next();
-                    {
-                        if (p.required != null && p.required) {
-                            lastRequired = p;
-                        }
-                        else {
-                            lastOptional = p;
-                        }
-                    }
+                else {
+                    lastOptional = p;
                 }
-                for (let index234 = op.allParams.iterator(); index234.hasNext();) {
-                    let p = index234.next();
-                    {
-                        if (p === lastRequired) {
-                            p.vendorExtensions.put("x-codegen-hasMoreRequired", false);
-                        }
-                        else if (p === lastOptional) {
-                            p.vendorExtensions.put("x-codegen-hasMoreOptional", false);
-                        }
-                        else {
-                            p.vendorExtensions.put("x-codegen-hasMoreRequired", true);
-                            p.vendorExtensions.put("x-codegen-hasMoreOptional", true);
-                        }
-                    }
+            }
+            for (const p of op.allParams) {
+                if (p === lastRequired) {
+                    p.vendorExtensions.put("x-codegen-hasMoreRequired", false);
                 }
-                op.vendorExtensions.put("x-codegen-hasRequiredParams", lastRequired != null);
-                return op;
-            })();
-        }
-        else if (((typeof path === 'string') || path === null) && ((typeof httpMethod === 'string') || httpMethod === null) && ((operation != null && operation instanceof Operation) || operation === null) && ((definitions != null && (definitions["__interfaces"] != null && definitions["__interfaces"].indexOf("java.util.Map") >= 0 || definitions.constructor != null && definitions.constructor["__interfaces"] != null && definitions.constructor["__interfaces"].indexOf("java.util.Map") >= 0)) || definitions === null) && swagger === undefined) {
-            return this.fromOperation$java_lang_String$java_lang_String$io_swagger_models_Operation$java_util_Map(path, httpMethod, operation, definitions);
+                else if (p === lastOptional) {
+                    p.vendorExtensions.put("x-codegen-hasMoreOptional", false);
+                }
+                else {
+                    if (!p.venderExtensions) p.vendorExtensions = newHashMap();
+                    p.vendorExtensions.put("x-codegen-hasMoreRequired", true);
+                    p.vendorExtensions.put("x-codegen-hasMoreOptional", true);
+                }
+            }
+            op.vendorExtensions.put("x-codegen-hasRequiredParams", lastRequired != null);
+            return op;
         }
         else
-            throw new Error('invalid overload');
+            return this.fromOperation$java_lang_String$java_lang_String$io_swagger_models_Operation$java_util_Map(path, httpMethod, operation, definitions);
     }
 
     fromModel(name, model, allDefinitions) {
-        if (((typeof name === 'string') || name === null) && ((model != null && (model["__interfaces"] != null && model["__interfaces"].indexOf("io.swagger.models.Model") >= 0 || model.constructor != null && model.constructor["__interfaces"] != null && model.constructor["__interfaces"].indexOf("io.swagger.models.Model") >= 0)) || model === null) && ((allDefinitions != null && (allDefinitions["__interfaces"] != null && allDefinitions["__interfaces"].indexOf("java.util.Map") >= 0 || allDefinitions.constructor != null && allDefinitions.constructor["__interfaces"] != null && allDefinitions.constructor["__interfaces"].indexOf("java.util.Map") >= 0)) || allDefinitions === null)) {
-            let __args = Array.prototype.slice.call(arguments);
-            return (() => {
-                let codegenModel = super.fromModel(name, model, allDefinitions);
-                if (allDefinitions != null && codegenModel != null && codegenModel.parent != null && codegenModel.hasEnums) {
-                    let parentModel = allDefinitions.get(codegenModel.parentSchema);
-                    let parentCodegenModel = super.fromModel(codegenModel.parent, parentModel, allDefinitions);
-                    codegenModel = JavascriptClientCodegen.reconcileInlineEnums(codegenModel, parentCodegenModel);
+        if (arguments.length > 2) {
+            let codegenModel = super.fromModel(name, model, allDefinitions);
+            if (allDefinitions != null && codegenModel != null && codegenModel.parent != null && codegenModel.hasEnums) {
+                let parentModel = allDefinitions.get(codegenModel.parentSchema);
+                let parentCodegenModel = super.fromModel(codegenModel.parent, parentModel, allDefinitions);
+                codegenModel = JavascriptClientCodegen.reconcileInlineEnums(codegenModel, parentCodegenModel);
+            }
+            if (model != null && model instanceof ArrayModel) {
+                let am = model;
+                if (am.getItems() != null) {
+                    codegenModel.vendorExtensions.put("x-isArray", true);
+                    codegenModel.vendorExtensions.put("x-itemType", this.getSwaggerType(am.getItems()));
                 }
-                if (model != null && model instanceof ArrayModel) {
-                    let am = model;
-                    if (am.getItems() != null) {
-                        codegenModel.vendorExtensions.put("x-isArray", true);
-                        codegenModel.vendorExtensions.put("x-itemType", this.getSwaggerType(am.getItems()));
-                    }
+            }
+            else if (model != null && model instanceof ModelImpl) {
+                let mm = model;
+                if (mm.getAdditionalProperties() != null) {
+                    codegenModel.vendorExtensions.put("x-isMap", true);
+                    codegenModel.vendorExtensions.put("x-itemType", this.getSwaggerType(mm.getAdditionalProperties()));
                 }
-                else if (model != null && model instanceof ModelImpl) {
-                    let mm = model;
-                    if (mm.getAdditionalProperties() != null) {
-                        codegenModel.vendorExtensions.put("x-isMap", true);
-                        codegenModel.vendorExtensions.put("x-itemType", this.getSwaggerType(mm.getAdditionalProperties()));
-                    }
-                }
-                return codegenModel;
-            })();
-        }
-        else if (((typeof name === 'string') || name === null) && ((model != null && (model["__interfaces"] != null && model["__interfaces"].indexOf("io.swagger.models.Model") >= 0 || model.constructor != null && model.constructor["__interfaces"] != null && model.constructor["__interfaces"].indexOf("io.swagger.models.Model") >= 0)) || model === null) && allDefinitions === undefined) {
+            }
+            return codegenModel;
+
+        } else {
             return this.fromModel$java_lang_String$io_swagger_models_Model(name, model);
         }
-        else
-            throw new Error('invalid overload');
     }
 
     sanitizePath(p) {
@@ -740,39 +720,32 @@ export class JavascriptClientCodegen extends DefaultCodegen {
         let operations = objs.get("operations");
         if (operations != null) {
             let ops = operations.get("operation");
-            for (let index235 = ops.iterator(); index235.hasNext();) {
-                let operation = index235.next();
-                {
-                    let argList = [];
-                    let hasOptionalParams = false;
-                    for (let index236 = operation.allParams.iterator(); index236.hasNext();) {
-                        let p = index236.next();
-                        {
-                            if (p.required != null && p.required) {
-                                argList.add(p.paramName);
-                            }
-                            else {
-                                hasOptionalParams = true;
-                            }
-                        }
+            for (const operation of ops) {
+
+                let argList = [];
+                let hasOptionalParams = false;
+                for (const p of operation.allParams) {
+                    if (p.required != null && p.required) {
+                        argList.add(p.paramName);
                     }
-                    if (hasOptionalParams) {
-                        argList.add("opts");
+                    else {
+                        hasOptionalParams = true;
                     }
-                    if (!this.usePromises) {
-                        argList.add("callback");
-                    }
-                    operation.vendorExtensions.put("x-codegen-argList", StringUtils.join(argList, ", "));
-                    for (let index237 = operation.allParams.iterator(); index237.hasNext();) {
-                        let cp = index237.next();
-                        {
-                            let jsdocType = this.getJSDocType(cp);
-                            cp.vendorExtensions.put("x-jsdoc-type", jsdocType);
-                        }
-                    }
-                    let jsdocType = this.getJSDocType(operation);
-                    operation.vendorExtensions.put("x-jsdoc-type", jsdocType);
                 }
+                if (hasOptionalParams) {
+                    argList.add("opts");
+                }
+                if (!this.usePromises) {
+                    argList.add("callback");
+                }
+                operation.vendorExtensions.put("x-codegen-argList", StringUtils.join(argList, ", "));
+                for (const cp of operation.allParams) {
+                    let jsdocType = this.getJSDocType(cp);
+                    cp.vendorExtensions.put("x-jsdoc-type", jsdocType);
+                }
+                let jsdocType = this.getJSDocType(operation);
+                operation.vendorExtensions.put("x-jsdoc-type", jsdocType);
+
             }
         }
         return objs;
@@ -781,53 +754,42 @@ export class JavascriptClientCodegen extends DefaultCodegen {
     postProcessModels(objs) {
         objs = super.postProcessModelsEnum(objs);
         let models = objs.get("models");
-        for (let index238 = models.iterator(); index238.hasNext();) {
-            let _mo = index238.next();
-            {
-                let mo = _mo;
-                let cm = mo.get("model");
-                let required = [];
-                let allRequired = this.supportsInheritance ? [] : required;
-                cm.vendorExtensions.put("x-required", required);
-                cm.vendorExtensions.put("x-all-required", allRequired);
-                for (const __var of cm.vars) {
-                    let jsDocType = this.getJSDocType(cm, __var);
-                    __var.vendorExtensions.put("x-jsdoc-type", jsDocType);
-                    if ((__var.required)) {
-                        required.add(__var);
-                    }
+        for (const mo of models) {
+
+            let cm = mo.get("model");
+            let required = [];
+            let allRequired = this.supportsInheritance ? [] : required;
+            cm.vendorExtensions.put("x-required", required);
+            cm.vendorExtensions.put("x-all-required", allRequired);
+            for (const vars of cm.vars) {
+                let jsDocType = this.getJSDocType(cm, vars);
+                vars.vendorExtensions.put("x-jsdoc-type", jsDocType);
+                if (vars.required) {
+                    required.add(vars);
                 }
-                if (this.supportsInheritance) {
-                    for (let index240 = cm.allVars.iterator(); index240.hasNext();) {
-                        let vars = index240.next();
-                        {
-                            if ((vars.required)) {
-                                allRequired.add(vars);
-                            }
-                        }
-                    }
-                }
-                let lastRequired = null;
-                for (let index241 = cm.vars.iterator(); index241.hasNext();) {
-                    let vars = index241.next();
-                    {
-                        if (vars.required != null && vars.required) {
-                            lastRequired = vars;
-                        }
-                    }
-                }
-                for (let index242 = cm.vars.iterator(); index242.hasNext();) {
-                    let vars = index242.next();
-                    {
-                        if (vars === lastRequired) {
-                            vars.vendorExtensions.put("x-codegen-hasMoreRequired", false);
-                        }
-                        else if (vars.required != null && vars.required) {
-                            vars.vendorExtensions.put("x-codegen-hasMoreRequired", true);
-                        }
+            }
+            if (this.supportsInheritance) {
+                for (const vars of cm.allVars) {
+                    if ((vars.required)) {
+                        allRequired.add(vars);
                     }
                 }
             }
+            let lastRequired = null;
+            for (const vars of  cm.vars) {
+                if (vars.required != null && vars.required) {
+                    lastRequired = vars;
+                }
+            }
+            for (const vars of  cm.vars) {
+                if (vars === lastRequired) {
+                    vars.vendorExtensions.put("x-codegen-hasMoreRequired", false);
+                }
+                else if (vars.required != null && vars.required) {
+                    vars.vendorExtensions.put("x-codegen-hasMoreRequired", true);
+                }
+            }
+
         }
         return objs;
     }
@@ -836,7 +798,8 @@ export class JavascriptClientCodegen extends DefaultCodegen {
         return !this.__defaultIncludes.contains(type) && !this.__languageSpecificPrimitives.contains(type);
     }
 
-    static reconcileInlineEnums(codegenModel, parentCodegenModel) {
+    static
+    reconcileInlineEnums(codegenModel, parentCodegenModel) {
         if (parentCodegenModel.hasEnums) {
             let parentModelCodegenProperties = parentCodegenModel.vars;
             let codegenProperties = codegenModel.vars;
@@ -873,7 +836,8 @@ export class JavascriptClientCodegen extends DefaultCodegen {
         return codegenModel;
     }
 
-    static sanitizePackageName(packageName) {
+    static
+    sanitizePackageName(packageName) {
         packageName = packageName.trim();
         packageName = packageName.replace(new RegExp("[^a-zA-Z0-9_\\.]", 'g'), "_");
         if (isEmpty(packageName)) {

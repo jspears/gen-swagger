@@ -9,6 +9,12 @@ export default function StringBuilder(...strs) {
         },
         toString() {
             return _str;
+        },
+        length(){
+            return _str.length;
+        },
+        charAt(idx){
+            return _str[idx];
         }
     };
 

@@ -6,3 +6,10 @@ A pretty barbaric port of Swaggers generator to node.  Using a bit of jsweet for
 
 [codegen](https://github.com/swagger-api/swagger-codegen/blob/2.3.0/modules/swagger-codegen)
 [core](https://github.com/swagger-api/swagger-core.git)
+
+
+##Status
+
+ - [x] Android 
+ - [ ] Swift
+ - [ ] JavaScript

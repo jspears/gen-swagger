@@ -164,39 +164,27 @@ export default class DefaultCodegen {
     postProcessAllModels(objs) {
         if (this.supportsInheritance) {
             let allModels = newHashMap();
-            for (let index137 = objs.entrySet().iterator(); index137.hasNext();) {
-                let entry = index137.next();
+            for (const [key, inner] of objs) {
                 {
-                    let modelName = this.toModelName(entry.getKey());
-                    let inner = entry.getValue();
-                    let models = inner.get("models");
-                    for (let index138 = models.iterator(); index138.hasNext();) {
-                        let mo = index138.next();
-                        {
-                            let cm = mo.get("model");
-                            allModels.put(modelName, cm);
-                        }
+                    const modelName = this.toModelName(key);
+                    for (const mo of inner.get("models")) {
+                        allModels.put(modelName, mo.get("model"));
                     }
                 }
             }
-            for (let index139 = allModels.values().iterator(); index139.hasNext();) {
-                let cm = index139.next();
-                {
-                    if (cm.parent != null) {
-                        cm.parentModel = allModels.get(cm.parent);
-                    }
-                    if (cm.interfaces != null && !cm.interfaces.isEmpty()) {
-                        cm.interfaceModels = cm.interfaces.concat();
-                        for (let index140 = cm.interfaces.iterator(); index140.hasNext();) {
-                            let intf = index140.next();
-                            {
-                                let intfModel = allModels.get(intf);
-                                if (intfModel != null) {
-                                    cm.interfaceModels.add(intfModel);
-                                }
-                            }
+            for (const [key, cm] of allModels) {
+                if (cm.parent != null) {
+                    cm.parentModel = allModels.get(cm.parent);
+                }
+                if (cm.interfaces != null && !cm.interfaces.isEmpty()) {
+                    cm.interfaceModels = cm.interfaces.concat();
+                    for (const intf of cm.interfaces) {
+                        const intfModel = allModels.get(intf);
+                        if (intfModel != null) {
+                            cm.interfaceModels.add(intfModel);
                         }
                     }
+
                 }
             }
         }

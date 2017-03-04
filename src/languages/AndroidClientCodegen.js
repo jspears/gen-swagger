@@ -8,6 +8,7 @@ import LoggerFactory from "../java/LoggerFactory";
 import File from "../java/File";
 import {Arrays, newHashSet} from "../java/javaUtil";
 import DefaultCodegen from "../DefaultCodegen";
+import {parseBoolean} from '../java/BooleanHelper';
 
 export default class AndroidClientCodegen extends DefaultCodegen {
     static USE_ANDROID_MAVEN_GRADLE_PLUGIN = "useAndroidMavenGradlePlugin";
@@ -277,7 +278,7 @@ export default class AndroidClientCodegen extends DefaultCodegen {
             this.setSourceFolder(this.__additionalProperties.get(CodegenConstants.SOURCE_FOLDER));
         }
         if (this.__additionalProperties.containsKey(AndroidClientCodegen.USE_ANDROID_MAVEN_GRADLE_PLUGIN)) {
-            this.setUseAndroidMavenGradlePlugin(Boolean(this.__additionalProperties.get(AndroidClientCodegen.USE_ANDROID_MAVEN_GRADLE_PLUGIN)));
+            this.setUseAndroidMavenGradlePlugin(parseBoolean(this.__additionalProperties.get(AndroidClientCodegen.USE_ANDROID_MAVEN_GRADLE_PLUGIN)));
         }
         else {
             this.__additionalProperties.put(AndroidClientCodegen.USE_ANDROID_MAVEN_GRADLE_PLUGIN, this.useAndroidMavenGradlePlugin);

@@ -59,6 +59,14 @@ function resolve(obj, path) {
     if (path in obj) return obj[path];
     if (obj instanceof Map) return obj.get(path);
 }
+function canResolve(obj, path){
+    return true;
+    if (obj == null) return false;
+    if (path == null) return false;
+    if (typeof path != 'string') return false;
+    if (obj instanceof Map) return obj.has(path);
+    return (path in obj)
+}
 export const apply = (bean, obj, properties) => {
     if (obj == null) return bean;
     if (bean == null) throw new Error(`Bean can not be null`);
@@ -79,11 +87,14 @@ export const apply = (bean, obj, properties) => {
         const uProp = ucFirst(op);
         const set = `set${uProp}`;
         const get = `get${uProp}`;
-        const value = typeof obj[get] === 'function' ? obj[get]() : resolve(obj, prop);
-        if (typeof bean[set] === 'function') {
-            bean[set](value);
-        } else {
-            bean[prop] = value;
+        if (canResolve(obj, prop) || typeof obj[get] === 'function') {
+            const value = typeof obj[get] === 'function' ? obj[get]() :  resolve(obj, prop);
+
+            if (typeof bean[set] === 'function') {
+                bean[set](value);
+            } else {
+                bean[prop] = value;
+            }
         }
     }
     return bean;

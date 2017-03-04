@@ -5,7 +5,7 @@ import {apply} from '../java/beanUtils';
 
 export class Parameter {
     required = false;
-
+    vendorExtensions = newHashMap()
     isUniqueItems() {
         return this.uniqueItems
     }
@@ -44,7 +44,6 @@ export class Parameter {
     };
 
     setVendorExtension(name, value) {
-        if (!this.vendorExtensions) this.vendorExtensions = newHashMap();
         if (name.startsWith("-x")) {
             this.vendorExtensions.put(name, value);
         }

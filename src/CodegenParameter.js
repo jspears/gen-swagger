@@ -1,10 +1,16 @@
 import {HashMap, newHashMap} from "./java/javaUtil";
 export default class CodegenParameter {
-
-
     constructor() {
+        this._vendorExtensions = newHashMap();
         this.isEnum = false;
-        this.vendorExtensions = newHashMap();
+    }
+
+    get vendorExtensions() {
+        return this._vendorExtensions;
+    }
+
+    set vendorExtensions(vendorExtensions) {
+        this._vendorExtensions = vendorExtensions;
     }
 
     copy() {
