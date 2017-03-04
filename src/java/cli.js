@@ -1,6 +1,12 @@
-
 export class Options {
     options = [];
+    parser = new BasicParser(this);
+
+    parse(args) {
+        return this.parser.parse(args);
+
+    }
+
 
     addOption(short, long, hasArg = false, message = '') {
         long = long || short;
@@ -36,9 +42,18 @@ export class HelpFormatter {
 
 export class BasicParser {
     values = {};
+    formatter = new HelpFormatter();
 
-    parse(options, args) {
-        for (const {short, long, hasArg, message} of options.options) {
+    constructor(Options) {
+        this.options = Options;
+    }
+
+    usage() {
+        this.formatter.printHelp("MetaGenerator. Generator for creating a new template set and configuration for Codegen.  The output will be based on the language you specify, and includes default templates to include.", this.options);
+    }
+
+    parse(args) {
+        for (const {short, long, hasArg, message} of this.options.options) {
             let idx = args.indexOf(`-${short}`);
             if (idx < 0) idx = args.indexOf(`--${long}`);
             if (idx < 0) continue;
@@ -53,6 +68,10 @@ export class BasicParser {
             this.values[long] = this.values[short] = val;
         }
         return this;
+    }
+
+    static parse(options, args) {
+        return new BasicParser(options).parse(args);
     }
 
     getOptionValue(k) {

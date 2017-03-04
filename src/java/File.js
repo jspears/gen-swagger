@@ -15,8 +15,14 @@ export default class File {
     static separator = path.sep;
     static separatorChar = path.sep;
 
-    constructor(...args) {
-        this._filename = path.join(...args.map(toString));
+    constructor(file, ...args) {
+        if (!file) {
+            throw new Error(`File needs an argument`);
+        }
+        if (file instanceof File && args.length === 0) {
+            return file;
+        }
+        this._filename = path.join(toString(file), ...args.map(toString));
     }
 
     toAbsolutePath() {
@@ -27,8 +33,16 @@ export default class File {
         return this.toAbsolutePath();
     }
 
+    isAbsolute() {
+        return this.__filename.startsWith("/");
+    }
+
     toAbsolute() {
-        if (this.__filename.startsWith("/")) {
+        return this.getAbsoluteFile();
+    }
+
+    getAbsoluteFile() {
+        if (this.isAbsolute()) {
             return this;
         }
         return new File(path.join(process.cwd(), this._filename));

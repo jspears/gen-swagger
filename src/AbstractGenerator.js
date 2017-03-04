@@ -1,14 +1,15 @@
 import LoggerFactory from "./java/LoggerFactory";
 import _F from "./java/File";
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 const File = _F;
 export default class AbstractGenerator {
 
     writeToFile(filename, contents) {
         Log.info("writing file " + filename);
-        new File(filename).getParentFile().mkdirs();
-        return fs.writeFileSync(filename, contents, 'utf8');
+        const f = new File(filename);
+        f.getParentFile().mkdirs();
+        return fs.writeFileSync(f.getPath(), contents, 'utf8');
     }
 
     readTemplate(name) {
@@ -58,7 +59,7 @@ export default class AbstractGenerator {
                     return libTemplateFile;
                 }
             }
-            const fp =   config.embeddedTemplateDir() + File.separator + templateFile;
+            const fp = config.embeddedTemplateDir() + File.separator + templateFile;
             return fp;
         }
     }
