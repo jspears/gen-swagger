@@ -152,6 +152,9 @@ for (const k of ["name", "in", "description", "required", "type", "items", "coll
 const TYPES = [BodyParameter, CookieParameter, FormParameter, HeaderParameter, PathParameter, QueryParameter, RefParameter];
 
 export default function (val) {
+
+    if (val instanceof Parameter) return val;
+
     for (const ParameterType of TYPES) {
         if (ParameterType.TYPE == val.in) {
             const p = new ParameterType(val);

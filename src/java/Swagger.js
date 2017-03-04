@@ -15,7 +15,7 @@ import Sway from "sway";
 
     }
 }, Path.prototype);
-Path.prototype.toJSON = function(){
+Path.prototype.toJSON = function () {
     return this.definition;
 };
 const _asResponse = (r) => [(r.statusCode || 'default') + '', r];
@@ -44,6 +44,9 @@ beanify(Object.assign(Operation.prototype, {
             this._schema = factory(this.schema);
         }
         return this._schema;
+    },
+    setParameters(parameters){
+        this._parameters = parameters ? parameters.map(parameterFactory) : [];
     }
 }), ['produces', 'summary', 'tags', 'operationId', 'description', 'externalDocs', 'consumes', 'schemes', 'method', 'securityDefinitions']);
 

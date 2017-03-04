@@ -3,8 +3,8 @@ import ClientOptInput from "../src/ClientOptInput";
 import ClientOpts from "../src/ClientOpts";
 import path from "path";
 import AndroidClientCodegen from "../src/languages/AndroidClientCodegen";
-import JavascriptClientCodegen from '../src/languages/JavascriptClientCodegen';
-
+import JavascriptClientCodegen from "../src/languages/JavascriptClientCodegen";
+import SwiftCodegen from '../src/languages/SwiftCodegen';
 import Swagger from "../src/java/swagger";
 
 function generate(file, configer) {
@@ -29,10 +29,9 @@ describe('DefaultGenerator', function () {
         config.setTemplateDir(path.join(__dirname, '..', 'resources'));
         return config;
     }));
-    it("should generate: android 'uber.json' javascript", generate('uber.json', () => {
-        const config = new JavascriptClientCodegen();
-       // config.setTemplateDir(path.join(__dirname, '..', 'resources'));
-        return config;
-    }));
+
+    it("should generate: android 'uber.json' javascript", generate('uber.json', () => new JavascriptClientCodegen()));
+
+    it("should generate: android 'uber.json' swift", generate('uber.json', () => new SwiftCodegen()));
 
 });

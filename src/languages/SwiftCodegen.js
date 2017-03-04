@@ -1,27 +1,22 @@
-import { CliOption } from '../CliOption';
-import { CodegenConstants } from '../CodegenConstants';
-import { CodegenType } from '../CodegenType';
-import { DefaultCodegen } from '../DefaultCodegen';
-import { SupportingFile } from '../SupportingFile';
-import {HashSet, HashMap, Arrays} from '../java/javaUtil';
-var Iterators = com.google.common.collect.Iterators;
-var Lists = com.google.common.collect.Lists;
-import Operation from "./Operation";
-import Swagger from "./Swagger";
-var HeaderParameter = io.swagger.models.parameters.HeaderParameter;
-import {ArrayProperty} from "./models/properties";
-import {MapProperty} from "./models/properties";
-var ArrayUtils = org.apache.commons.lang3.ArrayUtils;
-import StringUtils from "./java/StringUtils";
-var WordUtils = org.apache.commons.lang3.text.WordUtils;
-import File from "./java/File";
-var ArrayList = java.util.ArrayList;
-var Arrays = java.util.Arrays;
-var HashMap = java.util.HashMap;
-var HashSet = java.util.HashSet;
-var Pattern = java.util.regex.Pattern;
+import CliOption from "../CliOption";
+import CodegenConstants from "../CodegenConstants";
+import CodegenType from "../CodegenType";
+import DefaultCodegen from "../DefaultCodegen";
+import SupportingFile from "../SupportingFile";
+import {HashSet, HashMap, Arrays} from "../java/javaUtil";
+import {ArrayProperty, MapProperty} from "../models/properties";
+import StringUtils from "../java/StringUtils";
+import File from "../java/File";
+import {HeaderParameter} from '../models/parameters';
+import {parseBoolean} from "../java/BooleanHelper";
 
-export class SwiftCodegen extends DefaultCodegen {
+const ArrayUtils = {
+    contains(arr, val){
+        return arr && arr.indexOf(val) > -1;
+    }
+};
+
+export default class SwiftCodegen extends DefaultCodegen {
     constructor() {
         super();
         this.projectName = "SwaggerClient";
@@ -63,7 +58,7 @@ export class SwiftCodegen extends DefaultCodegen {
         this.__typeMapping.put("UUID", "NSUUID");
         this.__importMapping = (new HashMap());
         this.__cliOptions.add(new CliOption(SwiftCodegen.PROJECT_NAME, "Project name in Xcode"));
-        this.__cliOptions.add(new CliOption(SwiftCodegen.RESPONSE_AS, "Optionally use libraries to manage response.  Currently " + StringUtils.join(SwiftCodegen.RESPONSE_LIBRARIES_$LI$(), ", ") + " are available."));
+        this.__cliOptions.add(new CliOption(SwiftCodegen.RESPONSE_AS, "Optionally use libraries to manage response.  Currently " + StringUtils.join(SwiftCodegen.RESPONSE_LIBRARIES, ", ") + " are available."));
         this.__cliOptions.add(new CliOption(SwiftCodegen.UNWRAP_REQUIRED, "Treat \'required\' properties in response as non-optional (which would crash the app if api returns null as opposed to required option specified in json schema"));
         this.__cliOptions.add(new CliOption(SwiftCodegen.POD_SOURCE, "Source information used for Podspec"));
         this.__cliOptions.add(new CliOption(CodegenConstants.POD_VERSION, "Version used for Podspec"));
@@ -78,21 +73,27 @@ export class SwiftCodegen extends DefaultCodegen {
         this.__cliOptions.add(new CliOption(SwiftCodegen.POD_DOCUMENTATION_URL, "Documentation URL used for Podspec"));
         this.__cliOptions.add(new CliOption(SwiftCodegen.SWIFT_USE_API_NAMESPACE, "Flag to make all the API classes inner-class of {{projectName}}API"));
     }
-    static RESPONSE_LIBRARIES_$LI$() { if (SwiftCodegen.RESPONSE_LIBRARIES == null)
-        SwiftCodegen.RESPONSE_LIBRARIES = [SwiftCodegen.LIBRARY_PROMISE_KIT]; return SwiftCodegen.RESPONSE_LIBRARIES; }
+
+
+    static PATH_PARAM_PATTERN_$LI$() {
+        if (SwiftCodegen.PATH_PARAM_PATTERN == null)
+            SwiftCodegen.PATH_PARAM_PATTERN = new RegExp("\\{[a-zA-Z_]+\\}");
+        return SwiftCodegen.PATH_PARAM_PATTERN;
+    }
     ;
-    static PATH_PARAM_PATTERN_$LI$() { if (SwiftCodegen.PATH_PARAM_PATTERN == null)
-        SwiftCodegen.PATH_PARAM_PATTERN = Pattern.compile("\\{[a-zA-Z_]+\\}"); return SwiftCodegen.PATH_PARAM_PATTERN; }
-    ;
+
     getTag() {
         return CodegenType.CLIENT;
     }
+
     getName() {
         return "swift";
     }
+
     getHelp() {
         return "Generates a swift client library.";
     }
+
     processOpts() {
         super.processOpts();
         if (this.__additionalProperties.containsKey(SwiftCodegen.PROJECT_NAME)) {
@@ -103,7 +104,7 @@ export class SwiftCodegen extends DefaultCodegen {
         }
         this.sourceFolder = this.projectName + File.separator + this.sourceFolder;
         if (this.__additionalProperties.containsKey(SwiftCodegen.UNWRAP_REQUIRED)) {
-            this.setUnwrapRequired(javaemul.internal.BooleanHelper.parseBoolean(/* valueOf */ new String(this.__additionalProperties.get(SwiftCodegen.UNWRAP_REQUIRED)).toString()));
+            this.setUnwrapRequired(parseBoolean(this.__additionalProperties.get(SwiftCodegen.UNWRAP_REQUIRED)));
         }
         this.__additionalProperties.put(SwiftCodegen.UNWRAP_REQUIRED, this.unwrapRequired);
         if (this.__additionalProperties.containsKey(SwiftCodegen.RESPONSE_AS)) {
@@ -120,7 +121,7 @@ export class SwiftCodegen extends DefaultCodegen {
             this.__additionalProperties.put("usePromiseKit", true);
         }
         if (this.__additionalProperties.containsKey(SwiftCodegen.SWIFT_USE_API_NAMESPACE)) {
-            this.swiftUseApiNamespace = javaemul.internal.BooleanHelper.parseBoolean(/* valueOf */ new String(this.__additionalProperties.get(SwiftCodegen.SWIFT_USE_API_NAMESPACE)).toString());
+            this.swiftUseApiNamespace = parseBoolean(this.__additionalProperties.get(SwiftCodegen.SWIFT_USE_API_NAMESPACE));
         }
         this.__additionalProperties.put(SwiftCodegen.SWIFT_USE_API_NAMESPACE, this.swiftUseApiNamespace);
         if (!this.__additionalProperties.containsKey(SwiftCodegen.POD_AUTHORS)) {
@@ -136,38 +137,37 @@ export class SwiftCodegen extends DefaultCodegen {
         this.__supportingFiles.add(new SupportingFile("git_push.sh.mustache", "", "git_push.sh"));
         this.__supportingFiles.add(new SupportingFile("gitignore.mustache", "", ".gitignore"));
     }
+
     isReservedWord(word) {
         return word != null && this.__reservedWords.contains(word);
     }
+
     escapeReservedWord(name) {
         return "_" + name;
     }
+
     modelFileFolder() {
         return this.__outputFolder + File.separator + this.sourceFolder + this.modelPackage().split('.').join(File.separatorChar);
     }
+
     apiFileFolder() {
         return this.__outputFolder + File.separator + this.sourceFolder + this.apiPackage().split('.').join(File.separatorChar);
     }
+
     getTypeDeclaration(p) {
-        if (((p != null && (p["__interfaces"] != null && p["__interfaces"].indexOf("io.swagger.models.properties.Property") >= 0 || p.constructor != null && p.constructor["__interfaces"] != null && p.constructor["__interfaces"].indexOf("io.swagger.models.properties.Property") >= 0)) || p === null)) {
-            let __args = Array.prototype.slice.call(arguments);
-            return (() => {
-                if (p != null && p instanceof ArrayProperty) {
-                    let ap = p;
-                    let inner = ap.getItems();
-                    return "[" + this.getTypeDeclaration(inner) + "]";
-                }
-                else if (p != null && p instanceof MapProperty) {
-                    let mp = p;
-                    let inner = mp.getAdditionalProperties();
-                    return "[String:" + this.getTypeDeclaration(inner) + "]";
-                }
-                return super.getTypeDeclaration(p);
-            })();
+        if (p != null && p instanceof ArrayProperty) {
+            let ap = p;
+            let inner = ap.getItems();
+            return "[" + this.getTypeDeclaration(inner) + "]";
         }
-        else
-            throw new Error('invalid overload');
+        else if (p != null && p instanceof MapProperty) {
+            let mp = p;
+            let inner = mp.getAdditionalProperties();
+            return "[String:" + this.getTypeDeclaration(inner) + "]";
+        }
+        return super.getTypeDeclaration(p);
     }
+
     getSwaggerType(p) {
         let swaggerType = super.getSwaggerType(p);
         let type = null;
@@ -180,9 +180,11 @@ export class SwiftCodegen extends DefaultCodegen {
             type = swaggerType;
         return this.toModelName(type);
     }
+
     isDataTypeBinary(dataType) {
         return dataType != null && (dataType === "NSData");
     }
+
     /**
      * Output the proper model name (capitalized)
      *
@@ -203,13 +205,14 @@ export class SwiftCodegen extends DefaultCodegen {
             DefaultCodegen.Log().warn(name + " (reserved word) cannot be used as model name. Renamed to " + modelName);
             return modelName;
         }
-        if (name.matches("^\\d.*")) {
+        if (name.match("^\\d.*")) {
             let modelName = "Model" + name;
             DefaultCodegen.Log().warn(name + " (model name starts with number) cannot be used as model name. Renamed to " + modelName);
             return modelName;
         }
         return name;
     }
+
     /**
      * Return the capitalized file name of the model
      *
@@ -219,9 +222,11 @@ export class SwiftCodegen extends DefaultCodegen {
     toModelFilename(name) {
         return this.toModelName(name);
     }
+
     toDefaultValue(p) {
         return null;
     }
+
     toInstantiationType(p) {
         if (p != null && p instanceof MapProperty) {
             let ap = p;
@@ -235,9 +240,10 @@ export class SwiftCodegen extends DefaultCodegen {
         }
         return null;
     }
+
     fromProperty(name, p) {
         let codegenProperty = super.fromProperty(name, p);
-        if ((javaemul.internal.BooleanHelper.TRUE === codegenProperty.isContainer)) {
+        if ((codegenProperty.isContainer)) {
             return codegenProperty;
         }
         if (codegenProperty.isEnum) {
@@ -260,18 +266,21 @@ export class SwiftCodegen extends DefaultCodegen {
         }
         return codegenProperty;
     }
+
     toSwiftyEnumName(value) {
-        if (value.matches("[A-Z][a-z0-9]+[a-zA-Z0-9]*")) {
+        if (value.match("[A-Z][a-z0-9]+[a-zA-Z0-9]*")) {
             return value;
         }
         let separators = ['-', '_', ' ', ':'];
         return WordUtils.capitalizeFully.apply(null, [StringUtils.lowerCase(value)].concat(separators)).replace(new RegExp("[-_  :]", 'g'), "");
     }
+
     toApiName(name) {
         if (name.length === 0)
             return "DefaultAPI";
         return this.initialCaps(name) + "API";
     }
+
     toOperationId(operationId) {
         operationId = DefaultCodegen.camelize(this.sanitizeName(operationId), true);
         if (StringUtils.isEmpty(operationId)) {
@@ -284,74 +293,60 @@ export class SwiftCodegen extends DefaultCodegen {
         }
         return operationId;
     }
+
     toVarName(name) {
         name = this.sanitizeName(name);
-        if (name.matches("^[A-Z_]*$")) {
+        if (name.match("^[A-Z_]*$")) {
             return name;
         }
         name = DefaultCodegen.camelize(name, true);
-        if (this.isReservedWord(name) || name.matches("^\\d.*")) {
+        if (this.isReservedWord(name) || name.match("^\\d.*")) {
             name = this.escapeReservedWord(name);
         }
         return name;
     }
+
     toParamName(name) {
         name = this.sanitizeName(name);
         name = name.replace(new RegExp("-", 'g'), "_");
-        if (name.matches("^[A-Z_]*$")) {
+        if (name.match("^[A-Z_]*$")) {
             return name;
         }
         name = DefaultCodegen.camelize(name, true);
-        if (this.isReservedWord(name) || name.matches("^\\d.*")) {
+        if (this.isReservedWord(name) || name.match("^\\d.*")) {
             name = this.escapeReservedWord(name);
         }
         return name;
     }
+
     fromOperation(path, httpMethod, operation, definitions, swagger) {
-        if (((typeof path === 'string') || path === null) && ((typeof httpMethod === 'string') || httpMethod === null) && ((operation != null && operation instanceof Operation) || operation === null) && ((definitions != null && (definitions["__interfaces"] != null && definitions["__interfaces"].indexOf("java.util.Map") >= 0 || definitions.constructor != null && definitions.constructor["__interfaces"] != null && definitions.constructor["__interfaces"].indexOf("java.util.Map") >= 0)) || definitions === null) && ((swagger != null && swagger instanceof Swagger) || swagger === null)) {
-            let __args = Array.prototype.slice.call(arguments);
-            return (() => {
-                path = SwiftCodegen.normalizePath(path);
-                let parameters = operation.getParameters();
-                parameters = Lists.newArrayList(Iterators.filter(parameters.iterator(), new SwiftCodegen.SwiftCodegen$0(this)));
-                operation.setParameters(parameters);
-                return super.fromOperation(path, httpMethod, operation, definitions, swagger);
-            })();
+        if (arguments.length > 4) {
+            path = SwiftCodegen.normalizePath(path);
+            let parameters = operation.getParameters();
+            parameters = parameters.filter(isHeader);//Lists.newArrayList(Iterators.filter(parameters.iterator(), new SwiftCodegen.SwiftCodegen$0(this)));
+            operation.setParameters(parameters);
+            return super.fromOperation(path, httpMethod, operation, definitions, swagger);
         }
-        else if (((typeof path === 'string') || path === null) && ((typeof httpMethod === 'string') || httpMethod === null) && ((operation != null && operation instanceof Operation) || operation === null) && ((definitions != null && (definitions["__interfaces"] != null && definitions["__interfaces"].indexOf("java.util.Map") >= 0 || definitions.constructor != null && definitions.constructor["__interfaces"] != null && definitions.constructor["__interfaces"].indexOf("java.util.Map") >= 0)) || definitions === null) && swagger === undefined) {
-            return this.fromOperation$java_lang_String$java_lang_String$io_swagger_models_Operation$java_util_Map(path, httpMethod, operation, definitions);
-        }
-        else
-            throw new Error('invalid overload');
+        return this.fromOperation$java_lang_String$java_lang_String$io_swagger_models_Operation$java_util_Map(path, httpMethod, operation, definitions);
     }
+
     static normalizePath(path) {
-        let builder = new StringBuilder();
-        let cursor = 0;
-        let matcher = SwiftCodegen.PATH_PARAM_PATTERN_$LI$().matcher(path);
-        let found = matcher.find();
-        while ((found)) {
-            let stringBeforeMatch = path.substring(cursor, matcher.start());
-            builder.append(stringBeforeMatch);
-            let group = matcher.group().substring(1, matcher.group().length - 1);
-            group = DefaultCodegen.camelize(group, true);
-            builder.append("{").append(group).append("}");
-            cursor = matcher.end();
-            found = matcher.find();
-        }
-        ;
-        let stringAfterMatch = path.substring(cursor);
-        builder.append(stringAfterMatch);
-        return builder.toString();
+        //todo figure this out.
+        return path;
     }
+
     setProjectName(projectName) {
         this.projectName = projectName;
     }
+
     setUnwrapRequired(unwrapRequired) {
         this.unwrapRequired = unwrapRequired;
     }
+
     setResponseAs(responseAs) {
         this.responseAs = responseAs;
     }
+
     toEnumValue(value, datatype) {
         if (("int" === datatype) || ("double" === datatype) || ("float" === datatype)) {
             return value;
@@ -360,9 +355,11 @@ export class SwiftCodegen extends DefaultCodegen {
             return "\'" + this.escapeText(value) + "\'";
         }
     }
+
     toEnumDefaultValue(value, datatype) {
         return datatype + "_" + value;
     }
+
     toEnumVarName(name, datatype) {
         if (("int" === datatype) || ("double" === datatype) || ("float" === datatype)) {
             let varName = new String(name);
@@ -374,28 +371,32 @@ export class SwiftCodegen extends DefaultCodegen {
         let enumName = this.sanitizeName(DefaultCodegen.underscore(name).toUpperCase());
         enumName = enumName.replaceFirst("^_", "");
         enumName = enumName.replaceFirst("_$", "");
-        if (enumName.matches("\\d.*")) {
+        if (enumName.match("\\d.*")) {
             return "_" + enumName;
         }
         else {
             return enumName;
         }
     }
+
     toEnumName(property) {
         let enumName = this.toModelName(property.name);
-        if (enumName.matches("\\d.*")) {
+        if (enumName.match("\\d.*")) {
             return "_" + enumName;
         }
         else {
             return enumName;
         }
     }
+
     postProcessModels(objs) {
         return this.postProcessModelsEnum(objs);
     }
+
     escapeQuotationMark(input) {
         return input.split("\"").join("");
     }
+
     escapeUnsafeCharacters(input) {
         return input.split("*/").join("*_/").split("/*").join("/_*");
     }
@@ -418,16 +419,6 @@ SwiftCodegen.DEFAULT_POD_AUTHORS = "Swagger Codegen";
 SwiftCodegen.LIBRARY_PROMISE_KIT = "PromiseKit";
 SwiftCodegen["__class"] = "io.swagger.codegen.languages.SwiftCodegen";
 SwiftCodegen["__interfaces"] = ["io.swagger.codegen.CodegenConfig"];
-(function (SwiftCodegen) {
-    class SwiftCodegen$0 {
-        constructor(__parent) {
-            this.__parent = __parent;
-        }
-        public(parameter) {
-            return !(parameter != null && parameter instanceof HeaderParameter);
-        }
-    }
-    SwiftCodegen.SwiftCodegen$0 = SwiftCodegen$0;
-})(SwiftCodegen || (SwiftCodegen = {}));
-SwiftCodegen.PATH_PARAM_PATTERN_$LI$();
-SwiftCodegen.RESPONSE_LIBRARIES_$LI$();
+SwiftCodegen.RESPONSE_LIBRARIES = [SwiftCodegen.LIBRARY_PROMISE_KIT];
+
+const isHeader = (parameter) => !(parameter != null && parameter instanceof HeaderParameter)
