@@ -128,8 +128,8 @@ export default class DefaultCodegen {
         this.__importMapping.put("LocalDateTime", "org.joda.time.*");
         this.__importMapping.put("LocalDate", "org.joda.time.*");
         this.__importMapping.put("LocalTime", "org.joda.time.*");
-        this.__cliOptions.add(CliOption.newBoolean(CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG, CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG_DESC).defaultValue("true"));
-        this.__cliOptions.add(CliOption.newBoolean(CodegenConstants.ENSURE_UNIQUE_PARAMS, CodegenConstants.ENSURE_UNIQUE_PARAMS_DESC).defaultValue("true"));
+        this.__cliOptions.push(CliOption.newBoolean(CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG, CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG_DESC).defaultValue("true"));
+        this.__cliOptions.push(CliOption.newBoolean(CodegenConstants.ENSURE_UNIQUE_PARAMS, CodegenConstants.ENSURE_UNIQUE_PARAMS_DESC).defaultValue("true"));
         this.initalizeSpecialCharacterMapping();
     }
 
@@ -202,15 +202,17 @@ export default class DefaultCodegen {
      * @return maps of models with better enum support
      */
     postProcessModelsEnum(objs) {
-        let models = objs.get("models");
+        const models = objs.get("models");
         for (const mo of models) {
-            let cm = mo.get("model");
+            const cm = mo.get("model");
             if (cm.isEnum && cm.allowableValues != null) {
-                let allowableValues = cm.allowableValues;
-                let values = allowableValues.get("values");
-                let enumVars = [];
-                let commonPrefix = this.findCommonPrefixOfVars(values);
-                let truncateIdx = commonPrefix.length;
+                const allowableValues = cm.allowableValues;
+                const values = allowableValues.get("values");
+                const enumVars = [];
+                const commonPrefix = this.findCommonPrefixOfVars(values);
+                const truncateIdx = commonPrefix.length;
+                cm.allowableValues.put("enumVars", enumVars);
+
                 for (const value of values) {
                     let enumName;
                     if (truncateIdx === 0) {
@@ -222,9 +224,8 @@ export default class DefaultCodegen {
                             enumName = value.toString();
                         }
                     }
-                    enumVars.add(newHashMap(["name", this.toEnumVarName(enumName, cm.dataType)], ["value", this.toEnumValue(value.toString(), cm.dataType)]));
+                    enumVars.push(newHashMap(["name", this.toEnumVarName(enumName, cm.dataType)], ["value", this.toEnumValue(value.toString(), cm.dataType)]));
                 }
-                cm.allowableValues.put("enumVars", enumVars);
             }
             for (const _var of cm.vars) {
                 this.updateCodegenPropertyEnum(_var);
@@ -233,6 +234,7 @@ export default class DefaultCodegen {
         return objs;
     }
 
+    const COMMON _PREFIX_RE = new RegExp("[a-zA-Z0-9]+\\z", 'g');
     /**
      * Returns the common prefix of variables for enum naming
      *
@@ -242,7 +244,7 @@ export default class DefaultCodegen {
     findCommonPrefixOfVars(listStr) {
         try {
             let prefix = StringUtils.getCommonPrefix(listStr);
-            return prefix.replace(new RegExp("[a-zA-Z0-9]+\\z", 'g'), "");
+            return prefix.replace(, "");
         }
         catch (e) {
             Log.trace(e);

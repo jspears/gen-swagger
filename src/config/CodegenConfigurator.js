@@ -37,12 +37,7 @@ export class CodegenConfigurator {
         this.setOutputDir(".");
     }
 
-    static LOGGER_$LI$() {
-        if (CodegenConfigurator.LOGGER == null)
-            CodegenConfigurator.LOGGER = LoggerFactory.getLogger(CodegenConfigurator);
-        return CodegenConfigurator.LOGGER;
-    }
-    ;
+
 
     setLang(lang) {
         this.lang = lang;
