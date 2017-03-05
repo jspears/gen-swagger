@@ -219,14 +219,11 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
      */
     createPath(...segments) {
         let buf = new StringBuilder();
-        for (let index232 = 0; index232 < segments.length; index232++) {
-            let segment = segments[index232];
-            {
-                if (!StringUtils.isEmpty(segment) && !(segment === ".")) {
-                    if (buf.length() !== 0)
-                        buf.append(File.separatorChar);
-                    buf.append(segment);
-                }
+        for (const segment of segments) {
+            if (!StringUtils.isEmpty(segment) && !(segment === ".")) {
+                if (buf.length() !== 0)
+                    buf.append(File.separatorChar);
+                buf.append(segment);
             }
         }
         for (let i = 0; i < buf.length(); i++) {
