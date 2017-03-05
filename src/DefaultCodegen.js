@@ -50,6 +50,7 @@ import In from "./models/auth/In";
 import PropertyBuilder from "./models/PropertyBuilder";
 
 const _count2 = (_, i) => ++i;
+const COMMON_PREFIX_RE = new RegExp("[a-zA-Z0-9]+\\z", 'g');
 
 export default class DefaultCodegen {
     /**
@@ -234,7 +235,6 @@ export default class DefaultCodegen {
         return objs;
     }
 
-    const COMMON _PREFIX_RE = new RegExp("[a-zA-Z0-9]+\\z", 'g');
     /**
      * Returns the common prefix of variables for enum naming
      *
@@ -244,7 +244,7 @@ export default class DefaultCodegen {
     findCommonPrefixOfVars(listStr) {
         try {
             let prefix = StringUtils.getCommonPrefix(listStr);
-            return prefix.replace(, "");
+            return prefix.replace(COMMON_PREFIX_RE, "");
         }
         catch (e) {
             Log.trace(e);
@@ -272,12 +272,10 @@ export default class DefaultCodegen {
      * @return the sanitized value for enum
      */
     toEnumValue(value, datatype) {
-        if (((o1, o2) => o1.toUpperCase() === (o2 === null ? o2 : o2.toUpperCase()))("number", datatype)) {
+        if ("number" == "" + datatype.toLowerCase()) {
             return value;
         }
-        else {
-            return "\"" + this.escapeText(value) + "\"";
-        }
+        return "\"" + this.escapeText(value) + "\"";
     }
 
     /**
@@ -781,18 +779,18 @@ export default class DefaultCodegen {
      */
     toInstantiationType(p) {
         if (p != null && p instanceof MapProperty) {
-            let ap = p;
-            let additionalProperties2 = ap.getAdditionalProperties();
-            let type = additionalProperties2.getType();
+            const ap = p;
+            const additionalProperties2 = ap.getAdditionalProperties();
+            const type = additionalProperties2.getType();
             if (null == type) {
                 Log.error("No Type defined for Additional Property " + additionalProperties2 + "\n\tIn Property: " + p);
             }
-            let inner = this.getSwaggerType(additionalProperties2);
+            const inner = this.getSwaggerType(additionalProperties2);
             return this.__instantiationTypes.get("map") + "<String, " + inner + ">";
         }
         else if (p != null && p instanceof ArrayProperty) {
-            let ap = p;
-            let inner = this.getSwaggerType(ap.getItems());
+            const ap = p;
+            const inner = this.getSwaggerType(ap.getItems());
             return this.__instantiationTypes.get("array") + "<" + inner + ">";
         }
         else {

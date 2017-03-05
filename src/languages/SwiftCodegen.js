@@ -9,6 +9,10 @@ import StringUtils from "../java/StringUtils";
 import File from "../java/File";
 import {HeaderParameter} from "../models/parameters";
 import {parseBoolean} from "../java/BooleanHelper";
+import Pattern from "../java/Pattern";
+import StringBuilder from '../java/StringBuilder';
+
+const PATH_PARAM_PATTERN = Pattern.compile("\\{[a-zA-Z_\\-]+\\}");
 
 const ArrayUtils = {
     contains(arr, val){
@@ -74,12 +78,6 @@ export default class SwiftCodegen extends DefaultCodegen {
     }
 
 
-    static PATH_PARAM_PATTERN_$LI$() {
-        if (SwiftCodegen.PATH_PARAM_PATTERN == null)
-            SwiftCodegen.PATH_PARAM_PATTERN = new RegExp("\\{[a-zA-Z_]+\\}");
-        return SwiftCodegen.PATH_PARAM_PATTERN;
-    }
-    ;
 
     getTag() {
         return CodegenType.CLIENT;
@@ -316,16 +314,36 @@ export default class SwiftCodegen extends DefaultCodegen {
         if (arguments.length > 4) {
             path = SwiftCodegen.normalizePath(path);
             let parameters = operation.getParameters();
-            parameters = parameters.filter(isHeader);//Lists.newArrayList(Iterators.filter(parameters.iterator(), new SwiftCodegen.SwiftCodegen$0(this)));
+            parameters = parameters.filter(isHeader);
             operation.setParameters(parameters);
             return super.fromOperation(path, httpMethod, operation, definitions, swagger);
         }
-        return this.fromOperation$java_lang_String$java_lang_String$io_swagger_models_Operation$java_util_Map(path, httpMethod, operation, definitions);
+        return super.fromOperation(path, httpMethod, operation, definitions);
     }
 
     static normalizePath(path) {
-        //todo figure this out.
-        return path;
+        const builder = new StringBuilder();
+
+        let cursor = 0;
+        //Matcher matcher = PATH_PARAM_PATTERN.matcher(path);
+        const matcher = PATH_PARAM_PATTERN.matcher(path);
+        let found = matcher.find();
+        while (found) {
+            let stringBeforeMatch = path.substring(cursor, matcher.start());
+            builder.append(stringBeforeMatch);
+
+            let group = matcher.group().substring(1, matcher.group().length - 1);
+            group = DefaultCodegen.camelize(group, true);
+            builder.append("{").append(group).append("}");
+
+            cursor = matcher.end();
+            found = matcher.find();
+        }
+
+        let stringAfterMatch = path.substring(cursor);
+        builder.append(stringAfterMatch);
+
+        return builder.toString();
     }
 
     setProjectName(projectName) {
@@ -410,8 +428,6 @@ SwiftCodegen.POD_DOCUMENTATION_URL = "podDocumentationURL";
 SwiftCodegen.SWIFT_USE_API_NAMESPACE = "swiftUseApiNamespace";
 SwiftCodegen.DEFAULT_POD_AUTHORS = "Swagger Codegen";
 SwiftCodegen.LIBRARY_PROMISE_KIT = "PromiseKit";
-SwiftCodegen["__class"] = "io.swagger.codegen.languages.SwiftCodegen";
-SwiftCodegen["__interfaces"] = ["io.swagger.codegen.CodegenConfig"];
 SwiftCodegen.RESPONSE_LIBRARIES = [SwiftCodegen.LIBRARY_PROMISE_KIT];
 
 const isHeader = (parameter) => !(parameter != null && parameter instanceof HeaderParameter)
