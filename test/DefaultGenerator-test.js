@@ -4,34 +4,51 @@ import ClientOpts from "../src/ClientOpts";
 import path from "path";
 import AndroidClientCodegen from "../src/languages/AndroidClientCodegen";
 import JavascriptClientCodegen from "../src/languages/JavascriptClientCodegen";
-import SwiftCodegen from '../src/languages/SwiftCodegen';
+import SwiftCodegen from "../src/languages/SwiftCodegen";
 import Swagger from "../src/java/swagger";
+import util from "./support/test-util";
 
-function generate(file, configer) {
-    return async function () {
-        console.log('Using File', file);
-        const definition = path.join(__dirname, 'fixtures', file);
-        const swagger = await Swagger.create({definition});
 
-        const opts = new ClientOptInput().swagger(swagger).config(configer()).opts(new ClientOpts());
-        const c = new DefaultGenerator();
-        const dg = c.opts(opts);
-        dg.generate()
-
-    }
-}
 describe('DefaultGenerator', function () {
+    const {compare, runBefore, cwd, runAfter} = util(__dirname);
 
+    beforeEach(runBefore);
+    afterEach(runAfter);
 
-//    it("should generate: android 'petstore-minimal.json'", generate('petstore-minimal.json'));
-    it("should generate: android 'uber.json' android", generate('uber.json', () => {
-        const config = new AndroidClientCodegen();
-        config.setTemplateDir(path.join(__dirname, '..', 'resources'));
-        return config;
-    }));
+    function generate(file, configer) {
+        const thens = [];
+        const f = function () {
+            console.log(`Working in ${cwd('.')} using ${file}`);
+            const definition = path.join(__dirname, 'fixtures', file);
+            let p = Swagger.create({definition}).then(swagger => {
+                const config = configer();
+                config.setOutputDir(cwd('.'));
+                const opts = new ClientOptInput().swagger(swagger).config(config).opts(new ClientOpts());
+                const c = new DefaultGenerator();
+                const dg = c.opts(opts);
+                return dg.generate();
+            });
+            for (let args of thens) p = p.then(...args);
 
-    it("should generate: android 'uber.json' javascript", generate('uber.json', () => new JavascriptClientCodegen()));
+            return p;
+        };
+        f.then = (...args) => {
+            thens.push(args);
+            return f;
+        };
 
-    it("should generate: android 'uber.json' swift", generate('uber.json', () => new SwiftCodegen()));
+        return f;
+    }
+
+    it("should generate: android 'uber.json' for 'android'", generate('uber.json', () => new AndroidClientCodegen())
+        .then(compare('', 'fixtures/uber/android'))
+    );
+
+    it("should generate: android 'uber.json' for 'javascript'", generate('uber.json', () => new JavascriptClientCodegen())
+        .then(compare('', 'fixtures/uber/js'))
+    );
+
+    it("should generate: android 'uber.json' for 'swift'", generate('uber.json', () => new SwiftCodegen())
+        .then(compare('', 'fixtures/uber/swift')));
 
 });

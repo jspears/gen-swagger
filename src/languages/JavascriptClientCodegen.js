@@ -7,11 +7,9 @@ import CodegenProperty from "../CodegenProperty";
 import CodegenType from "../CodegenType";
 import DefaultCodegen from "../DefaultCodegen";
 import SupportingFile from "../SupportingFile";
-import StringUtils, {isEmpty} from "../java/StringUtils";
 import ArrayModel from "../models/ArrayModel";
 import ModelImpl from "../models/ModelImpl";
 import {
-    Property,
     ArrayProperty,
     BooleanProperty,
     DateProperty,
@@ -26,9 +24,9 @@ import {
 } from "../models/properties";
 import LoggerFactory from "../java/LoggerFactory";
 import File from "../java/File";
-import {Arrays, HashSet, newHashMap} from "../java/javaUtil";
-import {parseBoolean} from "../java/BooleanHelper";
+import {Arrays, HashSet, Collections} from "../java/javaUtil";
 import StringBuilder from "../java/StringBuilder";
+import {isEmpty} from "../java/StringUtils";
 
 export default class JavascriptClientCodegen extends DefaultCodegen {
     constructor() {
@@ -155,10 +153,10 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
         super.preprocessSwagger(swagger);
         if (swagger.getInfo() != null) {
             let info = swagger.getInfo();
-            if (StringUtils.isBlank(this.projectName) && info.getTitle() != null) {
+            if (isEmpty(this.projectName) && info.getTitle() != null) {
                 this.projectName = this.sanitizeName(this.dashize(info.getTitle()));
             }
-            if (StringUtils.isBlank(this.projectVersion)) {
+            if (isEmpty(this.projectVersion)) {
                 this.projectVersion = this.escapeUnsafeCharacters(this.escapeQuotationMark(info.getVersion()));
             }
             if (this.projectDescription == null) {
@@ -171,13 +169,13 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
                 }
             }
         }
-        if (StringUtils.isBlank(this.projectName)) {
+        if (isEmpty(this.projectName)) {
             this.projectName = "swagger-js-client";
         }
-        if (StringUtils.isBlank(this.moduleName)) {
+        if (isEmpty(this.moduleName)) {
             this.moduleName = DefaultCodegen.camelize(DefaultCodegen.underscore(this.projectName));
         }
-        if (StringUtils.isBlank(this.projectVersion)) {
+        if (isEmpty(this.projectVersion)) {
             this.projectVersion = "1.0.0";
         }
         if (this.projectDescription == null) {
@@ -220,7 +218,7 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
     createPath(...segments) {
         let buf = new StringBuilder();
         for (const segment of segments) {
-            if (!StringUtils.isEmpty(segment) && !(segment === ".")) {
+            if (!isEmpty(segment) && !(segment === ".")) {
                 if (buf.length() !== 0)
                     buf.append(File.separatorChar);
                 buf.append(segment);
@@ -343,10 +341,10 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
 
     toModelName(name) {
         name = this.sanitizeName(name);
-        if (!StringUtils.isEmpty(this.modelNamePrefix)) {
+        if (!isEmpty(this.modelNamePrefix)) {
             name = this.modelNamePrefix + "_" + name;
         }
-        if (!StringUtils.isEmpty(this.modelNameSuffix)) {
+        if (!isEmpty(this.modelNameSuffix)) {
             name = name + "_" + this.modelNameSuffix;
         }
         name = DefaultCodegen.camelize(name);
@@ -376,57 +374,51 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
     }
 
     getTypeDeclaration(p) {
-        if (p instanceof Property) {
-            if (p != null && p instanceof ArrayProperty) {
-                let ap = p;
-                let inner = ap.getItems();
-                return "[" + this.getTypeDeclaration(inner) + "]";
-            }
-            else if (p != null && p instanceof MapProperty) {
-                let mp = p;
-                let inner = mp.getAdditionalProperties();
-                return "{String: " + this.getTypeDeclaration(inner) + "}";
-            }
+        if (p != null && p instanceof ArrayProperty) {
+            const inner = p.getItems();
+            return "[" + this.getTypeDeclaration(inner) + "]";
+        }
+        else if (p != null && p instanceof MapProperty) {
+            const inner = p.getAdditionalProperties();
+            return "{String: " + this.getTypeDeclaration(inner) + "}";
         }
         return super.getTypeDeclaration(p);
     }
 
     toDefaultValue(p) {
-        if (p != null && p instanceof StringProperty) {
-            let dp = p;
-            if (dp.getDefault() != null) {
+        if (p instanceof StringProperty) {
+            if (p.getDefault() != null) {
                 return "\'" + dp.getDefault() + "\'";
             }
         }
-        else if (p != null && p instanceof BooleanProperty) {
+        else if (p instanceof BooleanProperty) {
+            if (p.getDefault() != null) {
+                return dp.getDefault().toString();
+            }
+        }
+        else if (p instanceof DateProperty) {
+        }
+        else if (p instanceof DateTimeProperty) {
+        }
+        else if (p instanceof DoubleProperty) {
             let dp = p;
             if (dp.getDefault() != null) {
                 return dp.getDefault().toString();
             }
         }
-        else if (p != null && p instanceof DateProperty) {
-        }
-        else if (p != null && p instanceof DateTimeProperty) {
-        }
-        else if (p != null && p instanceof DoubleProperty) {
+        else if (p instanceof FloatProperty) {
             let dp = p;
             if (dp.getDefault() != null) {
                 return dp.getDefault().toString();
             }
         }
-        else if (p != null && p instanceof FloatProperty) {
+        else if (p instanceof IntegerProperty) {
             let dp = p;
             if (dp.getDefault() != null) {
                 return dp.getDefault().toString();
             }
         }
-        else if (p != null && p instanceof IntegerProperty) {
-            let dp = p;
-            if (dp.getDefault() != null) {
-                return dp.getDefault().toString();
-            }
-        }
-        else if (p != null && p instanceof LongProperty) {
+        else if (p instanceof LongProperty) {
             let dp = p;
             if (dp.getDefault() != null) {
                 return dp.getDefault().toString();
@@ -437,7 +429,7 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
 
     toDefaultValueWithParam(name, p) {
         let type = this.normalizeType(this.getTypeDeclaration(p));
-        if (p != null && p instanceof RefProperty) {
+        if (p instanceof RefProperty) {
             return " = " + type + ".constructFromObject(data[\'" + name + "\']);";
         }
         else {
@@ -534,7 +526,7 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
     }
 
     toOperationId(operationId) {
-        if (StringUtils.isEmpty(operationId)) {
+        if (isEmpty(operationId)) {
             throw new Error("Empty method/operation name (operationId) not allowed");
         }
         operationId = DefaultCodegen.camelize(this.sanitizeName(operationId), true);
@@ -555,33 +547,32 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
             op.path = this.sanitizePath(op.path);
             let lastRequired = null;
             let lastOptional = null;
-            for (const p of op.allParams) {
-                if (p.required != null && p.required) {
+            for (const p of  op.allParams) {
+                if (p.required) {
                     lastRequired = p;
                 }
                 else {
                     lastOptional = p;
                 }
             }
-            for (const p of op.allParams) {
+            for (const p of  op.allParams) {
                 if (p === lastRequired) {
-                    p.vendorExtensions.put("x-codegen-hasMoreRequired", false);
+                    p._hasMoreRequired = false;
                 }
                 else if (p === lastOptional) {
-                    p.vendorExtensions.put("x-codegen-hasMoreOptional", false);
+                    p._hasMoreOptional = false;
                 }
                 else {
-                    if (!p.venderExtensions) p.vendorExtensions = newHashMap();
-                    p.vendorExtensions.put("x-codegen-hasMoreRequired", true);
-                    p.vendorExtensions.put("x-codegen-hasMoreOptional", true);
+                    p._hasMoreRequired = true;
+                    p._hasMoreOptional = true;
                 }
             }
-            op.vendorExtensions.put("x-codegen-hasRequiredParams", lastRequired != null);
+            op._hasRequiredParams = lastRequired != null;
             return op;
         }
-        else
-            return this.fromOperation$java_lang_String$java_lang_String$io_swagger_models_Operation$java_util_Map(path, httpMethod, operation, definitions);
+        return super.fromOperation(path, httpMethod, operation, definitions);
     }
+
 
     fromModel(name, model, allDefinitions) {
         if (arguments.length > 2) {
@@ -594,23 +585,23 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
             if (model != null && model instanceof ArrayModel) {
                 let am = model;
                 if (am.getItems() != null) {
-                    codegenModel.vendorExtensions.put("x-isArray", true);
-                    codegenModel.vendorExtensions.put("x-itemType", this.getSwaggerType(am.getItems()));
+                    codegenModel._isArray = true;
+                    codegenModel._itemType = this.getSwaggerType(am.getItems());
                 }
             }
             else if (model != null && model instanceof ModelImpl) {
                 let mm = model;
                 if (mm.getAdditionalProperties() != null) {
-                    codegenModel.vendorExtensions.put("x-isMap", true);
-                    codegenModel.vendorExtensions.put("x-itemType", this.getSwaggerType(mm.getAdditionalProperties()));
+                    codegenModel._isMap = true;
+                    codegenModel._itemType = this.getSwaggerType(mm.getAdditionalProperties());
                 }
             }
             return codegenModel;
-
-        } else {
-            return this.fromModel$java_lang_String$io_swagger_models_Model(name, model);
         }
+        else
+            return super.fromModel(name, model);
     }
+
 
     sanitizePath(p) {
         return p.replace(new RegExp("\'", 'g'), "%27");
@@ -618,9 +609,9 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
 
     trimBrackets(s) {
         if (s != null) {
-            let beginIdx = s.charAt(0) === '[' ? 1 : 0;
+            let beginIdx = s[0] === '[' ? 1 : 0;
             let endIdx = s.length;
-            if (s.charAt(endIdx - 1) === ']')
+            if (s[endIdx - 1] === ']')
                 endIdx--;
             return s.substring(beginIdx, endIdx);
         }
@@ -628,33 +619,50 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
     }
 
     getModelledType(dataType) {
-        return "module:" + (StringUtils.isEmpty(this.invokerPackage) ? "" : (this.invokerPackage + "/")) + (StringUtils.isEmpty(this.__modelPackage) ? "" : (this.__modelPackage + "/")) + dataType;
+        return "module:" + (isEmpty(this.invokerPackage) ? "" : (this.invokerPackage + "/")) + (isEmpty(this.__modelPackage) ? "" : (this.__modelPackage + "/")) + dataType;
     }
 
     getJSDocType(cm, cp) {
         if (((cm != null && cm instanceof CodegenModel) || cm === null) && ((cp != null && cp instanceof CodegenProperty) || cp === null)) {
-            let __args = Array.prototype.slice.call(arguments);
-            return (() => {
-                if ((cp.isContainer)) {
-                    if ((cp.containerType === "array"))
-                        return "Array.<" + this.getJSDocType(cm, cp.items) + ">";
-                    else if ((cp.containerType === "map"))
-                        return "Object.<String, " + this.getJSDocType(cm, cp.items) + ">";
-                }
-                let dataType = this.trimBrackets(cp.datatypeWithEnum);
-                if (cp.isEnum) {
-                    dataType = cm.classname + '.' + dataType;
-                }
-                if (this.isModelledType(cp))
-                    dataType = this.getModelledType(dataType);
-                return dataType;
-            })();
+            if ((cp.isContainer)) {
+                if ((cp.containerType === "array"))
+                    return "Array.<" + this.getJSDocType(cm, cp.items) + ">";
+                else if ((cp.containerType === "map"))
+                    return "Object.<String, " + this.getJSDocType(cm, cp.items) + ">";
+            }
+            let dataType = this.trimBrackets(cp.datatypeWithEnum);
+            if (cp.isEnum) {
+                dataType = cm.classname + '.' + dataType;
+            }
+            if (this.isModelledType(cp))
+                dataType = this.getModelledType(dataType);
+            return dataType;
         }
         else if (((cm != null && cm instanceof CodegenParameter) || cm === null) && cp === undefined) {
-            return this.getJSDocType$io_swagger_codegen_CodegenParameter(cm);
+            let dataType = this.trimBrackets(cm.dataType);
+            if (this.isModelledType(cm))
+                dataType = this.getModelledType(dataType);
+            if ((cm.isListContainer)) {
+                return "Array.<" + dataType + ">";
+            }
+            else if ((cm.isMapContainer)) {
+                return "Object.<String, " + dataType + ">";
+            }
+            return dataType;
         }
         else if (((cm != null && cm instanceof CodegenOperation) || cm === null) && cp === undefined) {
-            return this.getJSDocType$io_swagger_codegen_CodegenOperation(cm);
+            let returnType = this.trimBrackets(cm.returnType);
+            if (returnType != null) {
+                if (this.isModelledType(cm))
+                    returnType = this.getModelledType(returnType);
+                if ((cm.isListContainer)) {
+                    return "Array.<" + returnType + ">";
+                }
+                else if ((cm.isMapContainer)) {
+                    return "Object.<String, " + returnType + ">";
+                }
+            }
+            return returnType;
         }
         else
             throw new Error('invalid overload');
@@ -662,55 +670,15 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
 
     isModelledType(cp) {
         if (((cp != null && cp instanceof CodegenProperty) || cp === null)) {
-            let __args = Array.prototype.slice.call(arguments);
-            return (() => {
-                return cp.isEnum || !this.__languageSpecificPrimitives.contains(cp.baseType == null ? cp.datatype : cp.baseType);
-            })();
+            return cp.isEnum || !this.__languageSpecificPrimitives.contains(cp.baseType == null ? cp.datatype : cp.baseType);
         }
         else if (((cp != null && cp instanceof CodegenParameter) || cp === null)) {
-            return this.isModelledType$io_swagger_codegen_CodegenParameter(cp);
+            return cp.isEnum || !this.__languageSpecificPrimitives.contains(cp.baseType == null ? cp.dataType : cp.baseType);
         }
         else if (((cp != null && cp instanceof CodegenOperation) || cp === null)) {
-            return this.isModelledType$io_swagger_codegen_CodegenOperation(cp);
+            return !(cp.returnTypeIsPrimitive);
         }
-        else
-            throw new Error('invalid overload');
-    }
-
-    getJSDocType$io_swagger_codegen_CodegenParameter(cp) {
-        let dataType = this.trimBrackets(cp.dataType);
-        if (this.isModelledType(cp))
-            dataType = this.getModelledType(dataType);
-        if ((cp.isListContainer)) {
-            return "Array.<" + dataType + ">";
-        }
-        else if ((cp.isMapContainer)) {
-            return "Object.<String, " + dataType + ">";
-        }
-        return dataType;
-    }
-
-    isModelledType$io_swagger_codegen_CodegenParameter(cp) {
-        return cp.isEnum || !this.__languageSpecificPrimitives.contains(cp.baseType == null ? cp.dataType : cp.baseType);
-    }
-
-    getJSDocType$io_swagger_codegen_CodegenOperation(co) {
-        let returnType = this.trimBrackets(co.returnType);
-        if (returnType != null) {
-            if (this.isModelledType(co))
-                returnType = this.getModelledType(returnType);
-            if ((co.isListContainer)) {
-                return "Array.<" + returnType + ">";
-            }
-            else if ((co.isMapContainer)) {
-                return "Object.<String, " + returnType + ">";
-            }
-        }
-        return returnType;
-    }
-
-    isModelledType$io_swagger_codegen_CodegenOperation(co) {
-        return !(co.returnTypeIsPrimitive);
+        throw new Error('invalid overload');
     }
 
     postProcessOperations(objs) {
@@ -718,33 +686,33 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
         if (operations != null) {
             let ops = operations.get("operation");
             for (const operation of ops) {
-
                 let argList = [];
                 let hasOptionalParams = false;
                 for (const p of operation.allParams) {
-                    if (p.required != null && p.required) {
-                        argList.add(p.paramName);
+                    if (p.required) {
+                        argList.push(p.paramName);
                     }
                     else {
                         hasOptionalParams = true;
                     }
                 }
                 if (hasOptionalParams) {
-                    argList.add("opts");
+                    argList.push("opts");
                 }
                 if (!this.usePromises) {
-                    argList.add("callback");
+                    argList.push("callback");
                 }
-                operation.vendorExtensions.put("x-codegen-argList", StringUtils.join(argList, ", "));
+                operation._argList = argList.join(", ");
                 for (const cp of operation.allParams) {
-                    let jsdocType = this.getJSDocType(cp);
-                    cp.vendorExtensions.put("x-jsdoc-type", jsdocType);
+                    cp._jsDocType = this.getJSDocType(cp);
                 }
-                let jsdocType = this.getJSDocType(operation);
-                operation.vendorExtensions.put("x-jsdoc-type", jsdocType);
-
+                operation._jsDocType = this.getJSDocType(operation);
             }
         }
+        Collections.sort(objs.get("imports"), (a, b) => {
+            const a1=a.get("import"), b1 =b.get("import");
+            return a1.localeCompare(b1);
+        });
         return objs;
     }
 
@@ -756,34 +724,37 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
             let cm = mo.get("model");
             let required = [];
             let allRequired = this.supportsInheritance ? [] : required;
-            cm.vendorExtensions.put("x-required", required);
-            cm.vendorExtensions.put("x-all-required", allRequired);
-            for (const vars of cm.vars) {
-                let jsDocType = this.getJSDocType(cm, vars);
-                vars.vendorExtensions.put("x-jsdoc-type", jsDocType);
-                if (vars.required) {
-                    required.add(vars);
+            cm._required = required;
+
+            cm._allRequired = allRequired;
+
+            for (const __var of cm.vars) {
+                let jsDocType = this.getJSDocType(cm, __var);
+                __var._jsDocType = jsDocType;
+
+                if ((__var.required)) {
+                    required.push(__var);
                 }
             }
             if (this.supportsInheritance) {
                 for (const vars of cm.allVars) {
-                    if ((vars.required)) {
-                        allRequired.add(vars);
+                    if (vars.required) {
+                        allRequired.push(vars);
                     }
                 }
             }
             let lastRequired = null;
-            for (const vars of  cm.vars) {
-                if (vars.required) {
+            for (const vars of cm.vars) {
+                if (vars.required != null && vars.required) {
                     lastRequired = vars;
                 }
             }
-            for (const vars of  cm.vars) {
+            for (const vars of cm.vars) {
                 if (vars === lastRequired) {
-                    vars.vendorExtensions.put("x-codegen-hasMoreRequired", false);
+                    vars._hasMoreRequired = false;
                 }
                 else if (vars.required != null && vars.required) {
-                    vars.vendorExtensions.put("x-codegen-hasMoreRequired", true);
+                    vars._hasMoreRequired = true;
                 }
             }
 
@@ -802,11 +773,10 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
             let removedChildEnum = false;
             for (const parentModelCodegenPropery of parentModelCodegenProperties) {
                 if (parentModelCodegenPropery.isEnum) {
-                    let iterator = codegenProperties.iterator();
-                    while ((iterator.hasNext())) {
-                        let codegenProperty = iterator.next();
+                    for (let i = codegenProperties.length; i--;) {
+                        const codegenProperty = codegenProperties[i];
                         if (codegenProperty.isEnum && codegenProperty.equals(parentModelCodegenPropery)) {
-                            iterator.remove();
+                            codegenProperties.splice(i, 1);
                             removedChildEnum = true;
                         }
                     }
@@ -814,7 +784,7 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
             }
             if (removedChildEnum) {
                 let count = 0;
-                let numVars = codegenProperties.size;
+                let numVars = codegenProperties.size();
                 for (const codegenProperty of codegenProperties) {
                     count += 1;
                     codegenProperty.hasMore = (count < numVars) ? true : null;
@@ -825,8 +795,9 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
         return codegenModel;
     }
 
-    static sanitizePackageName(packageName) {
-        packageName = packageName.trim().replace(new RegExp("[^a-zA-Z0-9_\\.]", 'g'), "_");
+    staticsanitizePackageName(packageName) {
+        packageName = packageName.trim();
+        packageName = packageName.replace(new RegExp("[^a-zA-Z0-9_\\.]", 'g'), "_");
         if (isEmpty(packageName)) {
             return "invalidPackageName";
         }
@@ -858,14 +829,25 @@ export default class JavascriptClientCodegen extends DefaultCodegen {
         return input.split("*/").join("*_/").split("/*").join("/_*");
     }
 }
-JavascriptClientCodegen.PROJECT_NAME = "projectName";
-JavascriptClientCodegen.MODULE_NAME = "moduleName";
-JavascriptClientCodegen.PROJECT_DESCRIPTION = "projectDescription";
-JavascriptClientCodegen.PROJECT_VERSION = "projectVersion";
-JavascriptClientCodegen.PROJECT_LICENSE_NAME = "projectLicenseName";
-JavascriptClientCodegen.USE_PROMISES = "usePromises";
-JavascriptClientCodegen.USE_INHERITANCE = "useInheritance";
-JavascriptClientCodegen.EMIT_MODEL_METHODS = "emitModelMethods";
-JavascriptClientCodegen.EMIT_JS_DOC = "emitJSDoc";
+
+JavascriptClientCodegen
+    .PROJECT_NAME = "projectName";
+JavascriptClientCodegen
+    .MODULE_NAME = "moduleName";
+JavascriptClientCodegen
+    .PROJECT_DESCRIPTION = "projectDescription";
+JavascriptClientCodegen
+    .PROJECT_VERSION = "projectVersion";
+JavascriptClientCodegen
+    .PROJECT_LICENSE_NAME = "projectLicenseName";
+JavascriptClientCodegen
+    .USE_PROMISES = "usePromises";
+JavascriptClientCodegen
+    .USE_INHERITANCE = "useInheritance";
+JavascriptClientCodegen
+    .EMIT_MODEL_METHODS = "emitModelMethods";
+JavascriptClientCodegen
+    .EMIT_JS_DOC = "emitJSDoc";
+
 
 const Log = LoggerFactory.getLogger(JavascriptClientCodegen);

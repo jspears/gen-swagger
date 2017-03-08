@@ -9,7 +9,9 @@ const Pattern = {
     split(regex, str){
         return Pattern.compile(regex).split(str);
     },
-
+    quote(str){
+        return (str + '') .replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&");
+    },
     compile(pattern, opts = ""){
         let re = new RegExp(pattern, "g" + opts);
 

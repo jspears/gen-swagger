@@ -8,6 +8,7 @@ import StringBuilder from "./java/StringBuilder";
 import LoggerFactory from "./java/LoggerFactory";
 import File from "./java/File";
 import {
+    Collections,
     newHashMap,
     newHashSet,
     LinkedHashSet,
@@ -23,9 +24,28 @@ import CodegenConstants from "./CodegenConstants";
 import InlineModelResolver from "./InlineModelResolver";
 import ComposedModel from "./models/ComposedModel";
 import GlobalSupportingFile from "./GlobalSupportingFile";
+import CodegenIgnoreProcessor from "./ignore/CodegenIgnoreProcessor";
+
+const sortClassName = (a, b) => {
+    const a1 = a && a.get("classname") || '', b1 = b && b.get("classname");
+    return a1.localeCompare(b1);
+};
+const sortModelName = (a, b) => {
+    const a1 = a && a.get("model") || '', b1 = b && b.get("model");
+    const aclassname = a1 && a1.classname, bclassname = b1 && b1.classname;
+    if (aclassname){
+        return aclassname.localeCompare(bclassname);
+    }
+    if (!bclassname){
+        return 0;
+    }
+    return -1;
+};
+
+
 
 const rethrow = (e, ...args) => {
-    Log.trace(e.stack + '');
+    Log.trace(e);
     throw new Error(...args);
 };
 
@@ -35,6 +55,7 @@ export default class DefaultGenerator extends AbstractGenerator {
         this.__opts = opts;
         this.swagger = opts.getSwagger();
         this.config = opts.getConfig();
+        this.ignoreProcessor = new CodegenIgnoreProcessor(this.config.getOutputDir())
         this.config.additionalProperties().putAll(opts.getOpts().getProperties());
         return this;
     }
@@ -126,7 +147,7 @@ export default class DefaultGenerator extends AbstractGenerator {
         this.config.processOpts();
         this.config.preprocessSwagger(this.swagger);
         this.config.additionalProperties().put("generatedDate", new Date().toString());
-        this.config.additionalProperties().put("generatorClass", this.config.constructor.toString());
+        this.config.additionalProperties().put("generatorClass", this.config.constructor.name);
         if (this.swagger.getInfo() != null) {
             let info = this.swagger.getInfo();
             if (info.getTitle() != null) {
@@ -211,7 +232,7 @@ export default class DefaultGenerator extends AbstractGenerator {
                 for (const name of modelKeys) {
                     try {
                         if (this.config.importMapping().containsKey(name)) {
-                            this.LOGGER.info("Model " + name + " not imported due to import mapping");
+                            Log.info("Model " + name + " not imported due to import mapping");
                             continue;
                         }
                         let model = definitions.get(name);
@@ -241,7 +262,7 @@ export default class DefaultGenerator extends AbstractGenerator {
                             }
                             let written = this.processTemplateToFile(models, templateName, filename);
                             if (written != null) {
-                                files.add(written);
+                                files.push(written);
 
                             }
                         }
@@ -254,7 +275,7 @@ export default class DefaultGenerator extends AbstractGenerator {
                                 }
                                 let written = this.processTemplateToFile(models, templateName, filename);
                                 if (written != null) {
-                                    files.add(written);
+                                    files.push(written);
                                 }
 
                             }
@@ -268,7 +289,7 @@ export default class DefaultGenerator extends AbstractGenerator {
                                 }
                                 let written = this.processTemplateToFile(models, templateName, filename);
                                 if (written != null) {
-                                    files.add(written);
+                                    files.push(written);
                                 }
                             }
 
@@ -337,7 +358,7 @@ export default class DefaultGenerator extends AbstractGenerator {
                             }
                             let written = this.processTemplateToFile(operation, templateName, filename);
                             if (written != null) {
-                                files.add(written);
+                                files.push(written);
                             }
                         }
                     }
@@ -350,7 +371,7 @@ export default class DefaultGenerator extends AbstractGenerator {
                             }
                             let written = this.processTemplateToFile(operation, templateName, filename);
                             if (written != null) {
-                                files.add(written);
+                                files.push(written);
                             }
                         }
                     }
@@ -363,7 +384,7 @@ export default class DefaultGenerator extends AbstractGenerator {
                             }
                             let written = this.processTemplateToFile(operation, templateName, filename);
                             if (written != null) {
-                                files.add(written);
+                                files.push(written);
                             }
                         }
                     }
@@ -378,21 +399,22 @@ export default class DefaultGenerator extends AbstractGenerator {
             Log.info("############ Operation info ############");
             Json.prettyPrint(allOperations);
         }
-        let bundle = (new HashMap());
+        let bundle = newHashMap();
         bundle.putAll(this.config.additionalProperties());
         bundle.put("apiPackage", this.config.apiPackage());
-        let apis = (new HashMap());
-        apis.put("apis", allOperations);
+
         if (this.swagger.getHost() != null) {
             bundle.put("host", this.swagger.getHost());
         }
+
         bundle.put("swagger", this.swagger);
         bundle.put("basePath", basePath);
         bundle.put("basePathWithoutHost", basePathWithoutHost);
         bundle.put("scheme", scheme);
         bundle.put("contextPath", contextPath);
-        bundle.put("apiInfo", apis);
-        bundle.put("models", allModels);
+        //Sort to make stable.
+        bundle.put("apiInfo", {"apis": Collections.sort(allOperations, sortClassName)});
+        bundle.put("models", Collections.sort(allModels, sortModelName));
         bundle.put("apiFolder", /* replace */ this.config.apiPackage().split('.').join(File.separatorChar));
         bundle.put("modelPackage", this.config.modelPackage());
         let authMethods = this.config.fromSecurity(this.swagger.getSecurityDefinitions());
@@ -447,30 +469,32 @@ export default class DefaultGenerator extends AbstractGenerator {
                         }
                     }
                     if (shouldGenerate) {
-                        if (templateFile.endsWith(".mustache")) {
-                            let template = this.readTemplate(templateFile);
-                            let tmpl = Mustache.compiler().withLoader(new TemplateLocator(this)).defaultValue("").compile(template);
-                            this.writeToFile(outputFilename, tmpl.execute(bundle));
-                            files.add(new File(outputFilename));
-                        }
-                        else {
-                            let __in = new File(templateFile);
-                            if (!__in.exists()) {
-                                __in = new File(this.getCPResourcePath(templateFile))
-                            }
-
-                            let outputFile = new File(outputFilename);
-                            let out = new File(outputFile, false);
-                            if (__in.exists()) {
-                                Log.info("writing file " + outputFile);
-                                IOUtils.copy(__in, out);
+                        if (this.ignoreProcessor.allowsFile(new File(outputFilename))) {
+                            if (templateFile.endsWith(".mustache")) {
+                                let template = this.readTemplate(templateFile);
+                                let tmpl = Mustache.compiler().withLoader(new TemplateLocator(this)).defaultValue("").compile(template, templateFile);
+                                this.writeToFile(outputFilename, tmpl.execute(bundle));
+                                files.push(new File(outputFilename));
                             }
                             else {
-                                if (__in == null) {
-                                    Log.error("can\'t open " + templateFile + " for input");
+                                let input = new File(templateFile);
+                                if (!input.exists()) {
+                                    input = new File(this.getCPResourcePath(templateFile))
                                 }
+
+                                let outputFile = new File(outputFilename);
+                                let out = new File(outputFile);
+                                if (input.exists()) {
+                                    Log.info("writing file " + outputFile);
+                                    IOUtils.copy(input, out);
+                                }
+                                else {
+                                    if (input == null) {
+                                        Log.error("can\'t open " + templateFile + " for input");
+                                    }
+                                }
+                                files.push(outputFile);
                             }
-                            files.push(outputFile);
                         }
                     }
                     else {
@@ -496,7 +520,7 @@ export default class DefaultGenerator extends AbstractGenerator {
                     rethrow(e, "Could not generate supporting file \'" + swaggerCodegenIgnore + "\'", e);
                 }
 
-                files.add(ignoreFile);
+                files.push(ignoreFile);
             }
             let apache2License = "LICENSE";
             let licenseFileNameTarget = this.config.outputFolder() + File.separator + apache2License;
@@ -510,18 +534,22 @@ export default class DefaultGenerator extends AbstractGenerator {
                 rethrow(e, "Could not generate LICENSE file \'" + apache2License + "\'", e);
             }
 
-            files.add(licenseFile);
+            files.push(licenseFile);
         }
         this.config.processSwagger(this.swagger);
         return files;
     }
 
     processTemplateToFile(templateData, templateName, outputFilename) {
-        let templateFile = this.getFullTemplateFile(this.config, templateName);
-        let template = this.readTemplate(templateFile);
-        let tmpl = Mustache.compiler().withLoader(new TemplateLocator(this)).defaultValue("").compile(template);
-        this.writeToFile(outputFilename, tmpl.execute(templateData));
-        return new File(outputFilename);
+        if (this.ignoreProcessor.allowsFile(new File(outputFilename))) {
+            let templateFile = this.getFullTemplateFile(this.config, templateName);
+            let template = this.readTemplate(templateFile);
+            let tmpl = Mustache.compiler().withLoader(new TemplateLocator(this)).defaultValue("").compile(template, templateFile);
+            this.writeToFile(outputFilename, tmpl.execute(templateData));
+            return new File(outputFilename);
+        }
+        Log.info("Skipped generation of " + outputFilename + " due to rule in .swagger-codegen-ignore");
+        return null;
     }
 
     static processMimeTypes(mimeTypeList, operation, source) {
@@ -654,12 +682,16 @@ export default class DefaultGenerator extends AbstractGenerator {
     }
 
     processOperations(config, tag, ops) {
-        let operations = (new HashMap());
-        let objs = (new HashMap());
+        let operations = newHashMap();
+        let objs = newHashMap();
         objs.put("classname", config.toApiName(tag));
         objs.put("pathPrefix", config.toApiVarName(tag));
         let opIds = newHashSet();
         let counter = 0;
+        Collections.sort(ops, (a, b) => {
+            return a.operationId.localeCompare(b.operationId);
+        });
+
         for (const op of ops) {
 
             let opId = op.nickname;
@@ -688,6 +720,9 @@ export default class DefaultGenerator extends AbstractGenerator {
                 imports.add(im);
             }
         }
+        Collections.sort(imports, (a, b) => {
+            return a.get("import").localeCompare(b.get("import"));
+        });
         operations.put("imports", imports);
         if (imports.length > 0) {
             operations.put("hasImport", true);
@@ -741,6 +776,7 @@ export default class DefaultGenerator extends AbstractGenerator {
             imports.add(newHashMap(["import", s]));
         }
         config.postProcessModels(objs);
+
         return objs;
     }
 

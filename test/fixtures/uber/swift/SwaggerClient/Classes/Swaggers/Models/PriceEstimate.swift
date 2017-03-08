@@ -15,7 +15,7 @@ public class PriceEstimate: JSONEncodable {
     public var currencyCode: String?
     /** Display name of product. */
     public var displayName: String?
-    /** Formatted string of estimate in local currency of the start location. Estimate could be a range, a single number (flat rate) or \&quot;Metered\&quot; for TAXI. */
+    /** Formatted string of estimate in local currency of the start location. Estimate could be a range, a single number (flat rate) or &quot;Metered&quot; for TAXI. */
     public var estimate: String?
     /** Lower bound of the estimated price. */
     public var lowEstimate: Double?

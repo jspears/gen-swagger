@@ -102,7 +102,7 @@
   }
 
   /**
-   * Unique identifier representing a specific product for a given latitude & longitude. For example, uberX in San Francisco will have a different product_id than uberX in Los Angeles
+   * Unique identifier representing a specific product for a given latitude &amp; longitude. For example, uberX in San Francisco will have a different product_id than uberX in Los Angeles
    * @member {String} product_id
    */
   exports.prototype['product_id'] = undefined;
@@ -117,7 +117,7 @@
    */
   exports.prototype['display_name'] = undefined;
   /**
-   * Formatted string of estimate in local currency of the start location. Estimate could be a range, a single number (flat rate) or \"Metered\" for TAXI.
+   * Formatted string of estimate in local currency of the start location. Estimate could be a range, a single number (flat rate) or &quot;Metered&quot; for TAXI.
    * @member {String} estimate
    */
   exports.prototype['estimate'] = undefined;

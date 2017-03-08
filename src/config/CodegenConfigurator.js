@@ -1,14 +1,15 @@
-import  ClientOptInput  from '../ClientOptInput';
-import ClientOpts  from '../ClientOpts';
-import CodegenConfigLoader  from '../CodegenConfigLoader';
-import CodegenConstants  from '../CodegenConstants';
-import AuthParser  from '../auth/AuthParser';
-import File from '../java/File';
-import LoggerFactory from '../java/LoggerFactory';
-import {isNotEmpty, isEmpty} from '../java/StringUtils';
-import Json from '../java/Json';
-import {apply} from '../java/beanUtils';
-import System from '../java/System';
+import ClientOptInput from "../ClientOptInput";
+import ClientOpts from "../ClientOpts";
+import CodegenConfigLoader from "../CodegenConfigLoader";
+import CodegenConstants from "../CodegenConstants";
+import AuthParser from "../auth/AuthParser";
+import File from "../java/File";
+import LoggerFactory from "../java/LoggerFactory";
+import {isNotEmpty, isEmpty} from "../java/StringUtils";
+import {apply} from "../java/beanUtils";
+import System from "../java/System";
+import fs from 'fs';
+
 const Validate = {
     notEmpty(value, message){
         if (isEmpty(value)) throw new Error(message);
@@ -36,7 +37,6 @@ export class CodegenConfigurator {
         this.skipOverwrite = false;
         this.setOutputDir(".");
     }
-
 
 
     setLang(lang) {
@@ -403,7 +403,7 @@ export class CodegenConfigurator {
         }
     }
 
-    static async fromFile(configFile) {
+    static  fromFile(configFile) {
         if (isNotEmpty(configFile)) {
             try {
                 const conf = JSON.parse(fs.readFileSync(new File(configFile).getAbsolutePath(), 'utf-8'));

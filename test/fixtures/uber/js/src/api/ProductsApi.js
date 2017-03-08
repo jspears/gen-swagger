@@ -25,18 +25,18 @@
 (function(root, factory) {
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
-    define(['ApiClient', 'model/Product', 'model/Error'], factory);
+    define(['ApiClient', 'model/Error','model/Product'], factory);
   } else if (typeof module === 'object' && module.exports) {
     // CommonJS-like environments that support module.exports, like Node.
-    module.exports = factory(require('../ApiClient'), require('../model/Product'), require('../model/Error'));
+    module.exports = factory(require('../ApiClient'),require('../model/Error'),  require('../model/Product'));
   } else {
     // Browser globals (root is window)
     if (!root.UberApi) {
       root.UberApi = {};
     }
-    root.UberApi.ProductsApi = factory(root.UberApi.ApiClient, root.UberApi.Product, root.UberApi.Error);
+    root.UberApi.ProductsApi = factory(root.UberApi.ApiClient, root.UberApi.Error, root.UberApi.Product);
   }
-}(this, function(ApiClient, Product, Error) {
+}(this, function(ApiClient, Error, Product) {
   'use strict';
 
   /**

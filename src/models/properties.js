@@ -33,6 +33,7 @@ export class Property {
     }
 }
 export class AbstractNumericProperty extends Property {
+    static allowedProps = [...Property.allowedProps, "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf"];
 
 }
 class _ObjectProperty extends Property {
@@ -130,7 +131,6 @@ export class StringProperty extends Property {
 
 export class NumberProperty extends AbstractNumericProperty {
     static TYPE = "number";
-    static allowedProps = [...Property.allowedProps, "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf"];
 }
 export class BaseIntegerProperty extends AbstractNumericProperty {
     static TYPE = "integer";
@@ -145,7 +145,7 @@ export class Int64Property extends LongProperty {
     static FORMAT = "int64";
     static TYPE = "integer";
 }
-export class Int32Property extends LongProperty {
+export class Int32Property extends BaseIntegerProperty {
     static FORMAT = "int32";
     static TYPE = "integer";
 }
@@ -190,8 +190,9 @@ export class UrlProperty extends UriProperty {
     static FORMAT = "url";
 }
 
-export class UUIDProperty extends StringProperty {
+export class UUIDProperty extends Property {
     static FORMAT = "uuid";
+    static TYPE = "string";
 }
 
 export class NullProperty extends Property {

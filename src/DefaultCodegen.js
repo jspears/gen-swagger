@@ -115,16 +115,16 @@ export default class DefaultCodegen {
         this.__reservedWords = newHashSet();
         this.__importMapping = newHashMap();
         this.__importMapping.put("BigDecimal", "java.math.BigDecimal");
-        this.__importMapping.put("UUID", "java.java.UUID");
+        this.__importMapping.put("UUID", "java.util.UUID");
         this.__importMapping.put("File", "java.io.File");
-        this.__importMapping.put("Date", "java.java.Date");
+        this.__importMapping.put("Date", "java.util.Date");
         this.__importMapping.put("Timestamp", "java.sql.Timestamp");
-        this.__importMapping.put("Map", "java.java.Map");
-        this.__importMapping.put("HashMap", "java.java.HashMap");
-        this.__importMapping.put("Array", "java.java.List");
-        this.__importMapping.put("ArrayList", "java.java.ArrayList");
-        this.__importMapping.put("List", "java.java.*");
-        this.__importMapping.put("Set", "java.java.*");
+        this.__importMapping.put("Map", "java.util.Map");
+        this.__importMapping.put("HashMap", "java.util.HashMap");
+        this.__importMapping.put("Array", "java.util.List");
+        this.__importMapping.put("ArrayList", "java.util.ArrayList");
+        this.__importMapping.put("List", "java.util.*");
+        this.__importMapping.put("Set", "java.util.*");
         this.__importMapping.put("DateTime", "org.joda.time.*");
         this.__importMapping.put("LocalDateTime", "org.joda.time.*");
         this.__importMapping.put("LocalDate", "org.joda.time.*");
@@ -319,7 +319,9 @@ export default class DefaultCodegen {
         if (input == null) {
             return input;
         }
-        return this.escapeUnsafeCharacters(/* replace */ /* replace */ /* replaceAll */ StringEscapeUtils.unescapeJava(/* replace */ StringEscapeUtils.escapeJava(input).split("\\/").join("/")).replace(new RegExp("[\\t\\n\\r]", 'g'), " ").split("\\").join("\\\\").split("\"").join("\\\""));
+        return this.escapeUnsafeCharacters(StringEscapeUtils.unescapeJava(StringEscapeUtils.escapeJava(input).split("\\/").join("/"))
+
+            .replace(new RegExp("[\\t\\n\\r]", 'g'), " ").split("\\").join("\\\\").split("\"").join("\\\""));
     }
 
     /**
@@ -816,40 +818,40 @@ export default class DefaultCodegen {
         if (p.getExample() != null) {
             return p.getExample().toString();
         }
-        if (p != null && p instanceof StringProperty) {
+        if (p instanceof StringProperty) {
             return "null";
         }
-        else if (p != null && p instanceof BooleanProperty) {
+        else if (p instanceof BooleanProperty) {
             return "null";
         }
-        else if (p != null && p instanceof DateProperty) {
+        else if (p instanceof DateProperty) {
             return "null";
         }
-        else if (p != null && p instanceof DateTimeProperty) {
+        else if (p instanceof DateTimeProperty) {
             return "null";
         }
-        else if (p != null && p instanceof DoubleProperty) {
+        else if (p instanceof DoubleProperty) {
             let dp = p;
             if (dp.getExample() != null) {
                 return dp.getExample().toString();
             }
             return "null";
         }
-        else if (p != null && p instanceof FloatProperty) {
+        else if (p instanceof FloatProperty) {
             let dp = p;
             if (dp.getExample() != null) {
                 return dp.getExample().toString();
             }
             return "null";
         }
-        else if (p != null && p instanceof IntegerProperty) {
+        else if (p instanceof IntegerProperty) {
             let dp = p;
             if (dp.getExample() != null) {
                 return dp.getExample().toString();
             }
             return "null";
         }
-        else if (p != null && p instanceof LongProperty) {
+        else if (p instanceof LongProperty) {
             let dp = p;
             if (dp.getExample() != null) {
                 return dp.getExample().toString();
@@ -1684,23 +1686,23 @@ export default class DefaultCodegen {
                 }
                 allParams.push(p);
                 if (param != null && param instanceof QueryParameter) {
-                    queryParams.push(p.copy());
+                    queryParams.push(p);
                 }
                 else if (param != null && param instanceof PathParameter) {
-                    pathParams.push(p.copy());
+                    pathParams.push(p);
                 }
                 else if (param != null && param instanceof HeaderParameter) {
-                    headerParams.push(p.copy());
+                    headerParams.push(p);
                 }
                 else if (param != null && param instanceof CookieParameter) {
-                    cookieParams.push(p.copy());
+                    cookieParams.push(p);
                 }
                 else if (param != null && param instanceof BodyParameter) {
                     bodyParam = p;
-                    bodyParams.add(p.copy());
+                    bodyParams.add(p);
                 }
                 else if (param != null && param instanceof FormParameter) {
-                    formParams.add(p.copy());
+                    formParams.add(p);
                 }
                 if (p.required == null || !p.required) {
                     op.hasOptionalParams = true;
@@ -1734,6 +1736,7 @@ export default class DefaultCodegen {
         op.formParams = DefaultCodegen.addHasMore(formParams);
         op.nickname = op.operationId;
         if (op.allParams.length > 0) {
+            op.allParams
             op.hasParams = true;
         }
         op.externalDocs = operation.getExternalDocs();
@@ -1991,35 +1994,35 @@ export default class DefaultCodegen {
             p.example = p.paramName + "_example";
         }
         else if ((p.isBoolean)) {
-            p.example = new String("true");
+            p.example ="true";
         }
         else if ((p.isLong)) {
-            p.example = new String("789");
+            p.example ="789";
         }
         else if ((p.isInteger)) {
-            p.example = new String("56");
+            p.example ="56";
         }
         else if ((p.isFloat)) {
-            p.example = new String("3.4");
+            p.example ="3.4";
         }
         else if ((p.isDouble)) {
-            p.example = new String("1.2");
+            p.example ="1.2";
         }
         else if ((p.isBinary)) {
-            p.example = new String("BINARY_DATA_HERE");
+            p.example ="BINARY_DATA_HERE";
         }
         else if ((p.isByteArray)) {
-            p.example = new String("B");
+            p.example ="B";
         }
         else if ((p.isDate)) {
-            p.example = new String("2013-10-20");
+            p.example ="2013-10-20";
         }
         else if ((p.isDateTime)) {
-            p.example = new String("2013-10-20T19:20:30+01:00");
+            p.example ="2013-10-20T19:20:30+01:00";
         }
         else if ((param != null && param instanceof FormParameter) && (((o1, o2) => o1.toUpperCase() === (o2 === null ? o2 : o2.toUpperCase()))("file", param.getType()) || ("file" === p.baseType))) {
             p.isFile = true;
-            p.example = new String("/path/to/file.txt");
+            p.example ="/path/to/file.txt";
         }
         this.setParameterExampleValue(p);
         if (param != null && param instanceof QueryParameter) {
@@ -2221,9 +2224,7 @@ export default class DefaultCodegen {
                 if (i > 0) {
                     objs[i].secondaryParam = true;
                 }
-                if (i < lm) {
-                    objs[i].hasMore = true;
-                }
+                objs[i].hasMore = i < lm;
             }
             return objs;
         }
@@ -2232,9 +2233,7 @@ export default class DefaultCodegen {
             if (i > 0) {
                 objs.put("secondaryParam", true);
             }
-            if (i < objs.size - 1) {
-                objs.put("hasMore", true);
-            }
+            objs.put("hasMore", i < objs.size - 1);
         }
         return objs;
     }
@@ -2371,6 +2370,7 @@ export default class DefaultCodegen {
     }
 
     _addVars(m, vars, properties, mandatory) {
+
         let propertyList = Array.from(properties.entrySet());
         let totalCount = propertyList.length;
         for (let i = 0; i < totalCount; i++) {

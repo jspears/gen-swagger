@@ -22,11 +22,20 @@ export default class File {
         if (file instanceof File && args.length === 0) {
             return file;
         }
-        this._filename = path.join(toString(file), ...args.map(toString));
+        this._filename = args.length ? path.join(toString(file), ...args.map(toString)) : toString(file);
+    }
+
+    relativeTo(file) {
+
+        if (file instanceof File) {
+            file = file._filename;
+        }
+        const relPath = path.relative(file, this._filename);
+        return new File(relPath);
     }
 
     toAbsolutePath() {
-        return this.toAbsolute().getPath();
+        return this.getAbsoluteFile().getPath();
     }
 
     getAbsolutePath() {
@@ -34,7 +43,7 @@ export default class File {
     }
 
     isAbsolute() {
-        return this.__filename.startsWith("/");
+        return this._filename.startsWith("/");
     }
 
     toAbsolute() {

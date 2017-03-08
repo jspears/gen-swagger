@@ -83,7 +83,7 @@ var startLongitude = 1.2; // Number | Longitude component of start location.
 
 var opts = { 
   'customerUuid': "customerUuid_example", // String | Unique customer identifier to be used for experience customization.
-  'productId': "productId_example" // String | Unique identifier representing a specific product for a given latitude & longitude.
+  'productId': "productId_example" // String | Unique identifier representing a specific product for a given latitude &amp;longitude.
 };
 
 var callback = function(error, data, response) {

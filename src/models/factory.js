@@ -17,6 +17,13 @@ export function resolve(prop = {}) {
         return t && t.TYPE === 'string';
     });
 
+    if (prop.format && prop.type === 'string'){
+        for(const clz of STR_TYPES){
+            if (prop.format === clz.FORMAT)
+                return clz;
+        }
+    }
+
     for (const clz of TYPES) {
         if (!prop.type) {
             if ('properties' in prop) {

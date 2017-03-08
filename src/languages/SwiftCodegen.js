@@ -5,12 +5,13 @@ import DefaultCodegen from "../DefaultCodegen";
 import SupportingFile from "../SupportingFile";
 import {HashSet, HashMap, Arrays} from "../java/javaUtil";
 import {ArrayProperty, MapProperty} from "../models/properties";
-import StringUtils from "../java/StringUtils";
+import StringUtils, {capitalizeFully} from "../java/StringUtils";
 import File from "../java/File";
 import {HeaderParameter} from "../models/parameters";
 import {parseBoolean} from "../java/BooleanHelper";
 import Pattern from "../java/Pattern";
-import StringBuilder from '../java/StringBuilder';
+import StringBuilder from "../java/StringBuilder";
+import LoggerFactory from '../java/LoggerFactory';
 
 const PATH_PARAM_PATTERN = Pattern.compile("\\{[a-zA-Z_\\-]+\\}");
 
@@ -23,7 +24,7 @@ export default class SwiftCodegen extends DefaultCodegen {
     constructor() {
         super();
         this.projectName = "SwaggerClient";
-        this.responseAs = new Array(0);
+        this.responseAs = [];
         this.sourceFolder = "Classes" + File.separator + "Swaggers";
         this.unwrapRequired = false;
         this.swiftUseApiNamespace = false;
@@ -76,7 +77,6 @@ export default class SwiftCodegen extends DefaultCodegen {
         this.__cliOptions.add(new CliOption(SwiftCodegen.POD_DOCUMENTATION_URL, "Documentation URL used for Podspec"));
         this.__cliOptions.add(new CliOption(SwiftCodegen.SWIFT_USE_API_NAMESPACE, "Flag to make all the API classes inner-class of {{projectName}}API"));
     }
-
 
 
     getTag() {
@@ -152,15 +152,15 @@ export default class SwiftCodegen extends DefaultCodegen {
     }
 
     getTypeDeclaration(p) {
-        if (p != null && p instanceof ArrayProperty) {
-            let ap = p;
-            let inner = ap.getItems();
-            return "[" + this.getTypeDeclaration(inner) + "]";
-        }
-        else if (p != null && p instanceof MapProperty) {
-            let mp = p;
-            let inner = mp.getAdditionalProperties();
-            return "[String:" + this.getTypeDeclaration(inner) + "]";
+        if (p != null) {
+            if (p instanceof ArrayProperty) {
+                let inner = p.getItems();
+                return "[" + this.getTypeDeclaration(inner) + "]";
+            }
+            else if (p instanceof MapProperty) {
+                let inner = p.getAdditionalProperties();
+                return "[String:" + this.getTypeDeclaration(inner) + "]";
+            }
         }
         return super.getTypeDeclaration(p);
     }
@@ -225,29 +225,29 @@ export default class SwiftCodegen extends DefaultCodegen {
     }
 
     toInstantiationType(p) {
-        if (p != null && p instanceof MapProperty) {
-            let ap = p;
-            let inner = this.getSwaggerType(ap.getAdditionalProperties());
+
+        if (p instanceof MapProperty) {
+            let inner = this.getSwaggerType(p.getAdditionalProperties());
             return "[String:" + inner + "]";
         }
-        else if (p != null && p instanceof ArrayProperty) {
-            let ap = p;
-            let inner = this.getSwaggerType(ap.getItems());
+        else if (p instanceof ArrayProperty) {
+            let inner = this.getSwaggerType(p.getItems());
             return "[" + inner + "]";
         }
+
         return null;
     }
 
     fromProperty(name, p) {
         let codegenProperty = super.fromProperty(name, p);
-        if ((codegenProperty.isContainer)) {
+        if (codegenProperty.isContainer) {
             return codegenProperty;
         }
         if (codegenProperty.isEnum) {
-            let swiftEnums = (new ArrayList());
+            let swiftEnums = [];
             let values = codegenProperty.allowableValues.get("values");
             for (const value of values) {
-                swiftEnums.add(newHashMap(["enum", this.toSwiftyEnumName('' + value)], ["raw", '' + value]));
+                swiftEnums.push(newHashMap(["enum", this.toSwiftyEnumName('' + value)], ["raw", '' + value]));
             }
             codegenProperty.allowableValues.put("values", swiftEnums);
             codegenProperty.datatypeWithEnum = this.toEnumName(codegenProperty);
@@ -262,7 +262,7 @@ export default class SwiftCodegen extends DefaultCodegen {
         if (value.match("[A-Z][a-z0-9]+[a-zA-Z0-9]*")) {
             return value;
         }
-        let separators = ['-', '_', ' ', ':'];
+        const separators = ['-', '_', ' ', ':'];
         return capitalizeFully(value.toLowerCase(), separators).replace(new RegExp("[-_  :]", 'g'), "");
     }
 
@@ -279,7 +279,7 @@ export default class SwiftCodegen extends DefaultCodegen {
         }
         if (this.isReservedWord(operationId)) {
             let newOperationId = DefaultCodegen.camelize(("call_" + operationId), true);
-            DefaultCodegen.Log().warn(operationId + " (reserved word) cannot be used as method name. Renamed to " + newOperationId);
+            Log.warn(operationId + " (reserved word) cannot be used as method name. Renamed to " + newOperationId);
             return newOperationId;
         }
         return operationId;
@@ -430,4 +430,5 @@ SwiftCodegen.DEFAULT_POD_AUTHORS = "Swagger Codegen";
 SwiftCodegen.LIBRARY_PROMISE_KIT = "PromiseKit";
 SwiftCodegen.RESPONSE_LIBRARIES = [SwiftCodegen.LIBRARY_PROMISE_KIT];
 
-const isHeader = (parameter) => !(parameter != null && parameter instanceof HeaderParameter)
+const isHeader = (parameter) => !(parameter instanceof HeaderParameter);
+const Log = LoggerFactory.getLogger(SwiftCodegen);

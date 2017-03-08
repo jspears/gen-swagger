@@ -74,7 +74,7 @@ EstimatesApi apiInstance = new EstimatesApi();
 Double startLatitude = 3.4D; // Double | Latitude component of start location.
 Double startLongitude = 3.4D; // Double | Longitude component of start location.
 UUID customerUuid = new UUID(); // UUID | Unique customer identifier to be used for experience customization.
-String productId = "productId_example"; // String | Unique identifier representing a specific product for a given latitude & longitude.
+String productId = "productId_example"; // String | Unique identifier representing a specific product for a given latitude &amp; longitude.
 try {
     List<Product> result = apiInstance.estimatesTimeGet(startLatitude, startLongitude, customerUuid, productId);
     System.out.println(result);
@@ -105,4 +105,3 @@ No authorization required
 
  - **Content-Type**: Not defined
  - **Accept**: application/json
-

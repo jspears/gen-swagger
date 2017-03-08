@@ -15,10 +15,10 @@ export default class System {
         for (let i = 0, l = args.length; i < l; i++) {
             const arg = args[i];
             if (arg == starts) {
-                return args[++i];
+                return (properties[key] = args[++i]);
             }
             if (arg.startsWith(starts + '=')) {
-                return arg.substring(starts.length + 1);
+                return (properties[key] = arg.substring(starts.length + 1));
             }
         }
         return process.env[key];

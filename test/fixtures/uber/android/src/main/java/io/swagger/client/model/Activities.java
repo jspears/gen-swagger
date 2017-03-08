@@ -24,8 +24,8 @@
 
 package io.swagger.client.model;
 
-import io.swagger.client.model.Activity;
 import java.util.*;
+import io.swagger.client.model.Activity;
 
 import io.swagger.annotations.*;
 import com.google.gson.annotations.SerializedName;
@@ -125,3 +125,4 @@ public class Activities  {
     return sb.toString();
   }
 }
+

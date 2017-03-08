@@ -13,26 +13,20 @@ export default class AbstractGenerator {
     }
 
     readTemplate(name) {
-        try {
-            const reader = this.getTemplateReader(name);
-            if (reader == null) {
-                throw new Error("no file found");
-            }
-            return reader;
+        const reader = this.getTemplateReader(name.startsWith("resources") ? name : "resources/" + name);
+        if (reader == null) {
+            throw new Error(`no file found for "${name}"`);
         }
-        catch (e) {
-            Log.trace(e.message);
-        }
-        throw new Error("can\'t load template " + name);
+        return reader;
     }
 
     getTemplateReader(name) {
+        const f = new File(name);
         try {
-            const f = new File("resources", name);
             return fs.readFileSync(f.getPath(), 'utf-8');
         }
         catch (e) {
-            Log.trace(e.message);
+            Log.trace(e);
         }
 
         throw new Error("can\'t load template " + name);
@@ -54,12 +48,12 @@ export default class AbstractGenerator {
         else {
             let library = config.getLibrary();
             if (library) {
-                let libTemplateFile = config.embeddedTemplateDir() + File.separator + "libraries" + File.separator + library + File.separator + templateFile;
+                const libTemplateFile = 'resources' + File.separator + config.embeddedTemplateDir() + File.separator + "libraries" + File.separator + library + File.separator + templateFile;
                 if (this.embeddedTemplateExists(libTemplateFile)) {
                     return libTemplateFile;
                 }
             }
-            const fp = config.embeddedTemplateDir() + File.separator + templateFile;
+            const fp = 'resources' + File.separator + config.embeddedTemplateDir() + File.separator + templateFile;
             return fp;
         }
     }
@@ -69,7 +63,7 @@ export default class AbstractGenerator {
     }
 
     embeddedTemplateExists(name) {
-        return new File("resources", name).exists();
+        return new File(name).exists();
     }
 
     getCPResourcePath(name) {

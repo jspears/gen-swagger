@@ -8,7 +8,7 @@ import LoggerFactory from "../java/LoggerFactory";
 import File from "../java/File";
 import {Arrays, newHashSet} from "../java/javaUtil";
 import DefaultCodegen from "../DefaultCodegen";
-import {parseBoolean} from '../java/BooleanHelper';
+import {parseBoolean} from "../java/BooleanHelper";
 
 export default class AndroidClientCodegen extends DefaultCodegen {
     static USE_ANDROID_MAVEN_GRADLE_PLUGIN = "useAndroidMavenGradlePlugin";
@@ -148,6 +148,9 @@ export default class AndroidClientCodegen extends DefaultCodegen {
         }
         if (!StringUtils.isEmpty(this.modelNameSuffix)) {
             name = name + "_" + this.modelNameSuffix;
+        }
+        if (name.toUpperCase() == name) {
+            return name;
         }
         name = DefaultCodegen.camelize(this.sanitizeName(name));
         if (this.isReservedWord(name)) {
@@ -298,7 +301,7 @@ export default class AndroidClientCodegen extends DefaultCodegen {
             this.addSupportingFilesForHttpClient();
         }
         else {
-            throw new java.lang.IllegalArgumentException("Invalid \'library\' option specified: \'" + this.getLibrary() + "\'. Must be \'httpclient\' or \'volley\' (default)");
+            throw new Error("Invalid \'library\' option specified: \'" + this.getLibrary() + "\'. Must be \'httpclient\' or \'volley\' (default)");
         }
     }
 
@@ -310,17 +313,17 @@ export default class AndroidClientCodegen extends DefaultCodegen {
         this.__supportingFiles.add(new SupportingFile("settings.gradle.mustache", "", "settings.gradle"));
         this.__supportingFiles.add(new SupportingFile("build.mustache", "", "build.gradle"));
         this.__supportingFiles.add(new SupportingFile("manifest.mustache", this.projectFolder, "AndroidManifest.xml"));
-        this.__supportingFiles.add(new SupportingFile("apiInvoker.mustache", /* replace */ (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "ApiInvoker.java"));
-        this.__supportingFiles.add(new SupportingFile("httpPatch.mustache", /* replace */ (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "HttpPatch.java"));
-        this.__supportingFiles.add(new SupportingFile("jsonUtil.mustache", /* replace */ (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "JsonUtil.java"));
-        this.__supportingFiles.add(new SupportingFile("apiException.mustache", /* replace */ (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "ApiException.java"));
-        this.__supportingFiles.add(new SupportingFile("Pair.mustache", /* replace */ (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "Pair.java"));
+        this.__supportingFiles.add(new SupportingFile("apiInvoker.mustache",  (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "ApiInvoker.java"));
+        this.__supportingFiles.add(new SupportingFile("httpPatch.mustache",  (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "HttpPatch.java"));
+        this.__supportingFiles.add(new SupportingFile("jsonUtil.mustache",  (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "JsonUtil.java"));
+        this.__supportingFiles.add(new SupportingFile("apiException.mustache",  (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "ApiException.java"));
+        this.__supportingFiles.add(new SupportingFile("Pair.mustache",  (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "Pair.java"));
         this.__supportingFiles.add(new SupportingFile("git_push.sh.mustache", "", "git_push.sh"));
         this.__supportingFiles.add(new SupportingFile("gitignore.mustache", "", ".gitignore"));
         this.__supportingFiles.add(new SupportingFile("gradlew.mustache", "", "gradlew"));
         this.__supportingFiles.add(new SupportingFile("gradlew.bat.mustache", "", "gradlew.bat"));
-        this.__supportingFiles.add(new SupportingFile("gradle-wrapper.properties.mustache", /* replace */ this.gradleWrapperPackage.split(".").join(File.separator), "gradle-wrapper.properties"));
-        this.__supportingFiles.add(new SupportingFile("gradle-wrapper.jar", /* replace */ this.gradleWrapperPackage.split(".").join(File.separator), "gradle-wrapper.jar"));
+        this.__supportingFiles.add(new SupportingFile("gradle-wrapper.properties.mustache",  this.gradleWrapperPackage.split(".").join(File.separator), "gradle-wrapper.properties"));
+        this.__supportingFiles.add(new SupportingFile("gradle-wrapper.jar",  this.gradleWrapperPackage.split(".").join(File.separator), "gradle-wrapper.jar"));
     }
 
     addSupportingFilesForVolley() {
@@ -332,22 +335,22 @@ export default class AndroidClientCodegen extends DefaultCodegen {
         this.__supportingFiles.add(new SupportingFile("pom.mustache", "", "pom.xml"));
         this.__supportingFiles.add(new SupportingFile("build.mustache", "", "build.gradle"));
         this.__supportingFiles.add(new SupportingFile("manifest.mustache", this.projectFolder, "AndroidManifest.xml"));
-        this.__supportingFiles.add(new SupportingFile("apiInvoker.mustache", /* replace */ (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "ApiInvoker.java"));
-        this.__supportingFiles.add(new SupportingFile("jsonUtil.mustache", /* replace */ (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "JsonUtil.java"));
-        this.__supportingFiles.add(new SupportingFile("apiException.mustache", /* replace */ (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "ApiException.java"));
-        this.__supportingFiles.add(new SupportingFile("Pair.mustache", /* replace */ (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "Pair.java"));
-        this.__supportingFiles.add(new SupportingFile("request/getrequest.mustache", /* replace */ (this.sourceFolder + File.separator + this.requestPackage).split(".").join(File.separator), "GetRequest.java"));
-        this.__supportingFiles.add(new SupportingFile("request/postrequest.mustache", /* replace */ (this.sourceFolder + File.separator + this.requestPackage).split(".").join(File.separator), "PostRequest.java"));
-        this.__supportingFiles.add(new SupportingFile("request/putrequest.mustache", /* replace */ (this.sourceFolder + File.separator + this.requestPackage).split(".").join(File.separator), "PutRequest.java"));
-        this.__supportingFiles.add(new SupportingFile("request/deleterequest.mustache", /* replace */ (this.sourceFolder + File.separator + this.requestPackage).split(".").join(File.separator), "DeleteRequest.java"));
-        this.__supportingFiles.add(new SupportingFile("request/patchrequest.mustache", /* replace */ (this.sourceFolder + File.separator + this.requestPackage).split(".").join(File.separator), "PatchRequest.java"));
-        this.__supportingFiles.add(new SupportingFile("auth/apikeyauth.mustache", /* replace */ (this.sourceFolder + File.separator + this.authPackage).split(".").join(File.separator), "ApiKeyAuth.java"));
-        this.__supportingFiles.add(new SupportingFile("auth/httpbasicauth.mustache", /* replace */ (this.sourceFolder + File.separator + this.authPackage).split(".").join(File.separator), "HttpBasicAuth.java"));
-        this.__supportingFiles.add(new SupportingFile("auth/authentication.mustache", /* replace */ (this.sourceFolder + File.separator + this.authPackage).split(".").join(File.separator), "Authentication.java"));
+        this.__supportingFiles.add(new SupportingFile("apiInvoker.mustache",  (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "ApiInvoker.java"));
+        this.__supportingFiles.add(new SupportingFile("jsonUtil.mustache",  (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "JsonUtil.java"));
+        this.__supportingFiles.add(new SupportingFile("apiException.mustache",  (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "ApiException.java"));
+        this.__supportingFiles.add(new SupportingFile("Pair.mustache",  (this.sourceFolder + File.separator + this.invokerPackage).split(".").join(File.separator), "Pair.java"));
+        this.__supportingFiles.add(new SupportingFile("request/getrequest.mustache",  (this.sourceFolder + File.separator + this.requestPackage).split(".").join(File.separator), "GetRequest.java"));
+        this.__supportingFiles.add(new SupportingFile("request/postrequest.mustache",  (this.sourceFolder + File.separator + this.requestPackage).split(".").join(File.separator), "PostRequest.java"));
+        this.__supportingFiles.add(new SupportingFile("request/putrequest.mustache",  (this.sourceFolder + File.separator + this.requestPackage).split(".").join(File.separator), "PutRequest.java"));
+        this.__supportingFiles.add(new SupportingFile("request/deleterequest.mustache",  (this.sourceFolder + File.separator + this.requestPackage).split(".").join(File.separator), "DeleteRequest.java"));
+        this.__supportingFiles.add(new SupportingFile("request/patchrequest.mustache",  (this.sourceFolder + File.separator + this.requestPackage).split(".").join(File.separator), "PatchRequest.java"));
+        this.__supportingFiles.add(new SupportingFile("auth/apikeyauth.mustache",  (this.sourceFolder + File.separator + this.authPackage).split(".").join(File.separator), "ApiKeyAuth.java"));
+        this.__supportingFiles.add(new SupportingFile("auth/httpbasicauth.mustache",  (this.sourceFolder + File.separator + this.authPackage).split(".").join(File.separator), "HttpBasicAuth.java"));
+        this.__supportingFiles.add(new SupportingFile("auth/authentication.mustache",  (this.sourceFolder + File.separator + this.authPackage).split(".").join(File.separator), "Authentication.java"));
         this.__supportingFiles.add(new SupportingFile("gradlew.mustache", "", "gradlew"));
         this.__supportingFiles.add(new SupportingFile("gradlew.bat.mustache", "", "gradlew.bat"));
-        this.__supportingFiles.add(new SupportingFile("gradle-wrapper.properties.mustache", /* replace */ this.gradleWrapperPackage.split(".").join(File.separator), "gradle-wrapper.properties"));
-        this.__supportingFiles.add(new SupportingFile("gradle-wrapper.jar", /* replace */ this.gradleWrapperPackage.split(".").join(File.separator), "gradle-wrapper.jar"));
+        this.__supportingFiles.add(new SupportingFile("gradle-wrapper.properties.mustache",  this.gradleWrapperPackage.split(".").join(File.separator), "gradle-wrapper.properties"));
+        this.__supportingFiles.add(new SupportingFile("gradle-wrapper.jar",  this.gradleWrapperPackage.split(".").join(File.separator), "gradle-wrapper.jar"));
     }
 
     getUseAndroidMavenGradlePlugin() {

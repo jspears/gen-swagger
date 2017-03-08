@@ -1,4 +1,5 @@
 {{>licenseInfo}}
+
 package {{package}};
 
 import {{invokerPackage}}.ApiInvoker;
@@ -27,7 +28,7 @@ import java.util.concurrent.TimeoutException;
 
 {{#operations}}
 public class {{classname}} {
-  String basePath = "{{basePath}}";
+  String basePath = "{{{basePath}}}";
   ApiInvoker apiInvoker = ApiInvoker.getInstance();
 
   public void addHeader(String key, String value) {
@@ -48,9 +49,9 @@ public class {{classname}} {
 
   {{#operation}}
   /**
-  * {{summary}}
-  * {{notes}}
-{{#allParams}}   * @param {{paramName}} {{description}}
+  * {{{summary}}}
+  * {{{notes}}}
+{{#allParams}}   * @param {{paramName}} {{{description}}}
 {{/allParams}}   * @return {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}
   */
   public {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}} {{nickname}} ({{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) throws TimeoutException, ExecutionException, InterruptedException, ApiException {
@@ -64,7 +65,7 @@ public class {{classname}} {
   {{/required}}{{/allParams}}
 
   // create path and map variables
-  String path = "{{path}}".replaceAll("\\{format\\}","json"){{#pathParams}}.replaceAll("\\{" + "{{baseName}}" + "\\}", apiInvoker.escapeString({{{paramName}}}.toString())){{/pathParams}};
+  String path = "{{{path}}}".replaceAll("\\{format\\}","json"){{#pathParams}}.replaceAll("\\{" + "{{baseName}}" + "\\}", apiInvoker.escapeString({{{paramName}}}.toString())){{/pathParams}};
 
   // query params
   List<Pair> queryParams = new ArrayList<Pair>();
@@ -134,9 +135,9 @@ public class {{classname}} {
   }
 
       /**
-   * {{summary}}
-   * {{notes}}
-{{#allParams}}   * @param {{paramName}} {{description}}{{/allParams}}
+   * {{{summary}}}
+   * {{{notes}}}
+{{#allParams}}   * @param {{paramName}} {{{description}}}{{/allParams}}
   */
   public void {{nickname}} ({{#allParams}}{{{dataType}}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{^hasMore}}, {{/hasMore}}{{/allParams}}final Response.Listener<{{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}String{{/returnType}}> responseListener, final Response.ErrorListener errorListener) {
     Object postBody = {{#bodyParam}}{{paramName}}{{/bodyParam}}{{^bodyParam}}null{{/bodyParam}};
@@ -150,7 +151,7 @@ public class {{classname}} {
     {{/required}}{{/allParams}}
 
     // create path and map variables
-    String path = "{{path}}".replaceAll("\\{format\\}","json"){{#pathParams}}.replaceAll("\\{" + "{{baseName}}" + "\\}", apiInvoker.escapeString({{{paramName}}}.toString())){{/pathParams}};
+    String path = "{{{path}}}".replaceAll("\\{format\\}","json"){{#pathParams}}.replaceAll("\\{" + "{{baseName}}" + "\\}", apiInvoker.escapeString({{{paramName}}}.toString())){{/pathParams}};
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();

@@ -24,7 +24,7 @@
 
   /**
    * Constructs a new <&classname>. <#description>
-   * <description></description>
+   * <&description></description>
    * @alias module:<#invokerPackage><&invokerPackage>/</invokerPackage><#apiPackage><apiPackage>/</apiPackage><classname>
    * @class
    * @param {module:<#invokerPackage><&invokerPackage>/</invokerPackage>ApiClient} apiClient Optional API client implementation to use,
@@ -38,21 +38,21 @@
      * Callback function to receive the result of the <operationId> operation.
      * @callback module:<#invokerPackage><invokerPackage>/</invokerPackage><#apiPackage><apiPackage>/</apiPackage><classname>~<operationId>Callback
      * @param {String} error Error message, if any.
-     * @param <#vendorExtensions.x-jsdoc-type>{<&vendorExtensions.x-jsdoc-type>} data The data returned by the service call.</vendorExtensions.x-jsdoc-type><^vendorExtensions.x-jsdoc-type>data This operation does not return a value.</vendorExtensions.x-jsdoc-type>
+     * @param <#_jsDocType>{<&_jsDocType>} data The data returned by the service call.</_jsDocType><^_jsDocType>data This operation does not return a value.</_jsDocType>
      * @param {String} response The complete HTTP response.
      */</usePromises>
 
     /**<#summary>
-     * <summary></summary><#notes>
-     * <notes></notes><#allParams><#required>
-     * @param {<&vendorExtensions.x-jsdoc-type>} <paramName> <description></required></allParams><#hasOptionalParams>
+     * <&summary></summary><#notes>
+     * <&notes></notes><#allParams><#required>
+     * @param {<&_jsDocType>} <paramName> <&description></required></allParams><#hasOptionalParams>
      * @param {Object} opts Optional parameters<#allParams><^required>
-     * @param {<&vendorExtensions.x-jsdoc-type>} opts.<paramName> <description><#defaultValue> (default to <.>)</defaultValue></required></allParams></hasOptionalParams><^usePromises>
+     * @param {<&_jsDocType>} opts.<paramName> <&description><#defaultValue> (default to <.>)</defaultValue></required></allParams></hasOptionalParams><^usePromises>
      * @param {module:<#invokerPackage><&invokerPackage>/</invokerPackage><#apiPackage><&apiPackage>/</apiPackage><&classname>~<operationId>Callback} callback The callback function, accepting three arguments: error, data, response<#returnType>
-     * data is of type: {@link <&vendorExtensions.x-jsdoc-type>}</returnType></usePromises><#usePromises>
-     * @return {Promise} a {@link https://www.promisejs.org/|Promise}<#returnType>, with data of type {@link <&vendorExtensions.x-jsdoc-type>}</returnType></usePromises>
+     * data is of type: {@link <&_jsDocType>}</returnType></usePromises><#usePromises>
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}<#returnType>, with data of type {@link <&_jsDocType>}</returnType></usePromises>
      */
-</emitJSDoc>    this.<operationId> = function(<vendorExtensions.x-codegen-argList>) {<#hasOptionalParams>
+</emitJSDoc>    this.<operationId> = function(<_argList>) {<#hasOptionalParams>
       opts = opts || {};</hasOptionalParams>
       var postBody = <#bodyParam><#required><paramName></required><^required>opts['<paramName>']</required></bodyParam><^bodyParam>null</bodyParam>;
 <#allParams><#required>

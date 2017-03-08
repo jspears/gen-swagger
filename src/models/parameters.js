@@ -138,7 +138,7 @@ const ucFirst = (v) => v && v.length ? v[0].toUpperCase() + v.substring(1) : V;
 const $Parameter = Parameter.prototype;
 for (const k of ["name", "in", "description", "required", "type", "items", "collectionFormat", "default", "maximum",
     "exclusiveMaximum", "minimum", "exclusiveMinimum", "maxLength", "minLength", "pattern", "maxItems", "minItems",
-    "uniqueItems", "multipleOf"]) {
+    "uniqueItems", "multipleOf", "format"]) {
     const get = `get${ucFirst(k)}`, set = `set${ucFirst(k)}`;
     if (!$Parameter[get]) $Parameter[get] = function () {
         return this[k]

@@ -1,6 +1,6 @@
-import AuthParser from './auth/AuthParser';
+import AuthParser from "./auth/AuthParser";
 
-export default  class ClientOptInput {
+export default class ClientOptInput {
 
     swagger(swagger) {
         this.setSwagger(swagger);

@@ -28,6 +28,12 @@ export default function StringBuilder(...strs) {
         },
         codePointAt(at){
             return _str.codePointAt(at);
+        },
+        ['delete'](from, to){
+            const left = _str.substring(0, from);
+            const right = _str.substring(to);
+            _str = left + right;
+            return this;
         }
     };
 

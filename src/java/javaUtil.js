@@ -1,4 +1,4 @@
-import SortedMap from 'collections/sorted-map';
+import SortedMap from "collections/sorted-map";
 
 /**
  * This provides a bunch of Java like classes.  Collections, HashMap, HashSet
@@ -64,8 +64,8 @@ export class TreeMap extends SortedMap {
     }
 
     keySet() {
-        const hs =  new HashSet();
-        for (const [key] of this){
+        const hs = new HashSet();
+        for (const [key] of this) {
             hs.add(key);
         }
         return hs;
@@ -195,7 +195,7 @@ export class HashSet extends Set {
 
 export const Collections = {
     sort(arr, comparator){
-        return arr.sort(comparator);
+        return arr && arr.sort(comparator);
     },
     emptyList(){
         return EMPTY_LIST;

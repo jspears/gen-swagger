@@ -1,10 +1,11 @@
 import shell from 'shelljs';
+import File from './File';
 
 export default ({
 
     copy(src, out){
         const fsrc = new File(src), fout = new File(out);
-        fout.getParent().mkdirs();
-        shell.copy('-f', fsrc.getPath(), fout.getPath());
+        fout.getParentFile().mkdirs();
+        shell.cp('-f', fsrc.getPath(), fout.getPath());
     }
 })

@@ -12,9 +12,8 @@ import Alamofire
 public class ProductsAPI: APIBase {
     /**
      Product Types
-     
-     - parameter latitude: (query) Latitude component of location. 
-     - parameter longitude: (query) Longitude component of location. 
+     - parameter latitude: (query) Latitude component of location.
+     - parameter longitude: (query) Longitude component of location.
      - parameter completion: completion handler to receive the data and the error objects
      */
     public class func productsGet(latitude latitude: Double, longitude: Double, completion: ((data: [Product]?, error: ErrorType?) -> Void)) {
@@ -28,18 +27,11 @@ public class ProductsAPI: APIBase {
      Product Types
      - GET /products
      - The Products endpoint returns information about the Uber products offered at a given location. The response includes the display name and other details about each product, and lists the products in the proper display order.
-     - examples: [{contentType=application/json, example=[ {
-  "image" : "aeiou",
-  "product_id" : "aeiou",
-  "description" : "aeiou",
-  "display_name" : "aeiou",
-  "capacity" : "aeiou"
-} ]}]
-     
-     - parameter latitude: (query) Latitude component of location. 
-     - parameter longitude: (query) Longitude component of location. 
+     - examples: [{"contentType":"application/json","example":"[\n  {\n    \"product_id\": \"aeiou\",\n    \"description\": \"aeiou\",\n    \"display_name\": \"aeiou\",\n    \"capacity\": \"aeiou\",\n    \"image\": \"aeiou\"\n  }\n]"}]
+     - parameter latitude: (query) Latitude component of location.
+     - parameter longitude: (query) Longitude component of location.
 
-     - returns: RequestBuilder<[Product]> 
+     - returns: RequestBuilder<[Product]>
      */
     public class func productsGetWithRequestBuilder(latitude latitude: Double, longitude: Double) -> RequestBuilder<[Product]> {
         let path = "/products"
@@ -49,11 +41,11 @@ public class ProductsAPI: APIBase {
             "latitude": latitude,
             "longitude": longitude
         ]
- 
+
         let parameters = APIHelper.rejectNil(nillableParameters)
- 
+
         let convertedParameters = APIHelper.convertBoolToString(parameters)
- 
+
         let requestBuilder: RequestBuilder<[Product]>.Type = SwaggerClientAPI.requestBuilderFactory.getBuilder()
 
         return requestBuilder.init(method: "GET", URLString: URLString, parameters: convertedParameters, isBody: false)
