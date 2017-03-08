@@ -28,14 +28,7 @@ export default ({
 
                 return {
                     execute(data){
-                        Log.info(`Rendering ${file}`);
                         data = JSON.parse(Json.pretty(data));
-                        if (data.operations && data.operations.operation)
-                            for (const o of data.operations.operation) {
-                                console.log(o.operationId,'\n', o.examples,'\n\n\n\n');
-
-                            }
-
                         return Mustache.render(template, data, partialProxy)
                     }
                 };
