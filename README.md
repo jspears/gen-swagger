@@ -1,6 +1,6 @@
 Gen Swagger
 ===
-A pretty barbaric port of Swaggers generator to node.  Using a bit of jsweet for the boring bits.
+A pretty port of Swaggers generator to node.  Using a bit of [jsweet](https://jsweet.org) for the boring bits.
 
 #*Experimental/DO NOT USE* (or if you do - don't complain) ***
 
@@ -9,12 +9,13 @@ A pretty barbaric port of Swaggers generator to node.  Using a bit of jsweet for
 
 
 ##Status
-I have plans to compare the Java based one from this one, to ensure correctness.   But have not yet.
-So by working I me mean, just barely.
+The following languages can be generated and are super similar to the the Java version.
 
- - [x] Android
- - [x] Swift
+ - [x] Android 
+ - [x] Swift 
  - [x] JavaScript
  - [ ] All Others --- No Plans.
  
  
+## Credits
+- Swagger Team - https://github.com/swagger-api/swagger-core
