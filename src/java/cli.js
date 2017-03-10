@@ -1,6 +1,18 @@
-import StringBuilder from '../java/StringBuilder';
-import camelCase from 'lodash/camelCase';
-const SORT_CMDS = (a, b) => a.replace(PREFIX, '').localeCompare(b.replace(PREFIX, ''));
+import camelCase from "lodash/camelCase";
+import pad from "lodash/padEnd";
+
+const SORT_CMDS = (a, b) => a.Usage.name.localeCompare(b.Usage.name);
+const SORT_OPTS = (b, a) => {
+    let ret = a.name[0].replace(PREFIX, '').localeCompare(b.name[0].replace(PREFIX, ''));
+    if (ret === 0 && (a.name.length > 1 && b.name.length > 1)) {
+        ret = a.name[1].replace(PREFIX, '').localeCompare(b.name[1].replace(PREFIX, ''));
+    }
+    if (ret == 0) {
+        ret = a.name.length - b.name.length;
+    }
+    return ret;
+};
+
 const PREFIX = /^-+?/;
 export class Command {
     constructor({name, description}, options = []) {
@@ -8,21 +20,31 @@ export class Command {
         this.description = description;
         this.options = options;
     }
+
+    help(values) {
+        let str = `${this.name}\n${this.description}\n`;
+        for (const {name, title, required, hasArg, description, property} of this.options.sort(SORT_OPTS)) {
+            const val = values[property] || values[camelCase(name)] || 'value';
+
+            str += `\t${pad(name[0], 5)} ${pad(name[1], 20)} ${pad(required ? `[${val}]` : hasArg ? `<${val}>` : 'bool', 30)}\v ${description}\n`
+        }
+        return str;
+    }
 }
 export class Help {
     static Usage = new Command({name: "help", description: "This helpful message."}, []);
 
-    constructor(values, command = []) {
-        this.globalMeta = values;
-        this.commands = command;
+    constructor(values, globalMeta) {
+        this.values = values;
+        this.meta = globalMeta;
     }
 
     run() {
-        const {name, description} = this.globalMeta;
-        console.log(`${name} ${description}`);
-        for (const cmd of this.commands.sort(SORT_CMDS)) {
-            console.log(`\t${cmd}`);
+        let str = `${this.meta.name}\n${this.meta.description}\n`;
+        for (const cmd of this.meta.commands.sort(SORT_CMDS)) {
+            str += `\t${pad(cmd.Usage.name, 15)} - ${cmd.Usage.description}\n`;
         }
+        return str;
     }
 }
 class CliError extends Error {
@@ -52,7 +74,14 @@ export class Cli {
                 return {
                     async parse(args = []){
                         const values = {};
+                        const isHelp = args.indexOf('-h') > -1 || args.indexOf("--help") > -1;
+
+                        if (args.length == 0 || (args.length === 1 && isHelp)) {
+                            return new Help(values, opts).run();
+                        }
+
                         let Command = opts.defaultCommand;
+
                         for (const c of opts.commands) {
                             if (c.Usage.name === args[0]) {
                                 Command = c;
@@ -62,15 +91,14 @@ export class Cli {
                         if (!Command) {
                             throw new CliError(args.length ? `Unknown Command  ${args[0]}` : 'No Command given');
                         }
-                        let isHelp = args.indexOf('-h') > -1 || args.indexOf("--help") > -1;
                         for (const opt of Command.Usage.options) {
                             let _check;
                             let idx;
-                            NAMES: for (const name of opt.name) {
+                            for (const name of opt.name) {
                                 idx = args.indexOf(name);
                                 if (idx > -1) {
                                     _check = opt;
-                                    break NAMES;
+                                    break;
                                 }
                             }
                             if (_check) {
@@ -89,14 +117,9 @@ export class Cli {
                                 }
                             }
                         }
+
                         if (isHelp) {
-                            let str = `Command ${Command.Usage.name} has the following options:\n`;
-                            for (const opt of Command.Usage.options) {
-                                const cname = opt.property || camelCase(values[opt.title]);
-                                str = `${str}
-\t${opt.required ? '* ' : ''}${pad(opt.name[0], opt.required ? 3 : 5)}   ${pad(opt.name[1], 20)}  ${pad(cname in values ? values[cname] : opt.hasArg ? '<value>' : '', 20)} ${opt.description} `
-                            }
-                            return str;
+                            return Command.Usage.help(values, opts);
                         }
                         return await new Command(values, opts).run();
                     }
@@ -118,44 +141,12 @@ export class Options {
 
     }
 
-    /**  OptionType type() default OptionType.COMMAND;
-
-     String title() default "";
-
-     String[] name();
-
-     String description() default "";
-
-     boolean required() default false;
-
-     int arity() default -2147483648;
-
-     boolean hidden() default false;
-
-     String[] allowedValues() default {};**/
-    add({name:[short, long], title, description, has, arg, required, allowedValues}) {
-        this.options.push({
-            short,
-            long,
-            title,
-            message: description,
-            required,
-            allowedValues
-        })
-    }
-
     addOption(short, long, hasArg = false, message = '') {
         long = long || short;
         this.options.push({short, long, hasArg, message});
     }
 }
-const pad = (str = '', count = 0, pad = ' ') => {
-    let d = count - str.length;
-    while (pad.length < d) {
-        pad += pad;
-    }
-    return str + pad;
-};
+
 
 export class HelpFormatter {
     formatHelp(help, options = {options: []}) {
