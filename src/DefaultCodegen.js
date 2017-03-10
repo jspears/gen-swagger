@@ -53,6 +53,71 @@ const _count2 = (_, i) => ++i;
 const COMMON_PREFIX_RE = new RegExp("[a-zA-Z0-9]+\\z", 'g');
 
 export default class DefaultCodegen {
+    __outputFolder = "";
+    __defaultIncludes = newHashSet();
+    __typeMapping = newHashMap();
+    __instantiationTypes = newHashMap();
+    __reservedWords = newHashSet();
+    __languageSpecificPrimitives = newHashSet();
+    __importMapping = newHashMap();
+    __modelPackage = "";
+    __apiPackage = "";
+    modelNamePrefix = "";
+    modelNameSuffix = "";
+    __testPackage = "";
+    __apiTemplateFiles = newHashMap();
+    __modelTemplateFiles = newHashMap();
+    __apiTestTemplateFiles = newHashMap();
+    __modelTestTemplateFiles = newHashMap();
+    __apiDocTemplateFiles = newHashMap();
+    __modelDocTemplateFiles = newHashMap();
+    commonTemplateDir = "_common";
+    __additionalProperties = newHashMap();
+    __vendorExtensions = newHashMap();
+    __supportingFiles = [];
+    __cliOptions = [];
+    __supportedLibraries = newHashMap();
+    sortParamsByRequiredFlag = true;
+    ensureUniqueParams = true;
+    specialCharReplacements = newHashMap();
+    skipOverwrite = false;
+    supportsInheritance = false;
+    __defaultIncludes = newHashSet("double", "int", "long", "short", "char", "float", "String", "boolean", "Boolean", "Double", "Void", "Integer", "Long", "Float");
+    __typeMapping = newHashMap(["array", "List"],
+        ["map", "Map"],
+        ["List", "List"],
+        ["boolean", "Boolean"],
+        ["string", "String"],
+        ["int", "Integer"],
+        ["float", "Float"],
+        ["number", "BigDecimal"],
+        ["DateTime", "Date"],
+        ["long", "Long"],
+        ["short", "Short"],
+        ["char", "String"],
+        ["double", "Double"],
+        ["object", "Object"],
+        ["integer", "Integer"],
+        ["ByteArray", "byte[]"],
+        ["binary", "byte[]"]);
+    __instantiationTypes = newHashMap();
+    __reservedWords = newHashSet();
+    __importMapping = newHashMap(["BigDecimal", "java.math.BigDecimal"],
+        ["UUID", "java.util.UUID"],
+        ["File", "java.io.File"],
+        ["Date", "java.util.Date"],
+        ["Timestamp", "java.sql.Timestamp"],
+        ["Map", "java.util.Map"],
+        ["HashMap", "java.util.HashMap"],
+        ["Array", "java.util.List"],
+        ["ArrayList", "java.util.ArrayList"],
+        ["List", "java.util.*"],
+        ["Set", "java.util.*"],
+        ["DateTime", "org.joda.time.*"],
+        ["LocalDateTime", "org.joda.time.*"],
+        ["LocalDate", "org.joda.time.*"],
+        ["LocalTime", "org.joda.time.*"]);
+
     /**
      * Default constructor.
      * This method will map between Swagger type and language-specified type, as well as mapping
@@ -63,72 +128,6 @@ export default class DefaultCodegen {
      * returns string presentation of the example path (it's a constructor)
      */
     constructor() {
-        this.__outputFolder = "";
-        this.__defaultIncludes = newHashSet();
-        this.__typeMapping = newHashMap();
-        this.__instantiationTypes = newHashMap();
-        this.__reservedWords = newHashSet();
-        this.__languageSpecificPrimitives = newHashSet();
-        this.__importMapping = newHashMap();
-        this.__modelPackage = "";
-        this.__apiPackage = "";
-        this.modelNamePrefix = "";
-        this.modelNameSuffix = "";
-        this.__testPackage = "";
-        this.__apiTemplateFiles = newHashMap();
-        this.__modelTemplateFiles = newHashMap();
-        this.__apiTestTemplateFiles = newHashMap();
-        this.__modelTestTemplateFiles = newHashMap();
-        this.__apiDocTemplateFiles = newHashMap();
-        this.__modelDocTemplateFiles = newHashMap();
-        this.commonTemplateDir = "_common";
-        this.__additionalProperties = newHashMap();
-        this.__vendorExtensions = newHashMap();
-        this.__supportingFiles = [];
-        this.__cliOptions = [];
-        this.__supportedLibraries = newHashMap();
-        this.sortParamsByRequiredFlag = true;
-        this.ensureUniqueParams = true;
-        this.specialCharReplacements = newHashMap();
-        this.skipOverwrite = false;
-        this.supportsInheritance = false;
-        this.__defaultIncludes = newHashSet("double", "int", "long", "short", "char", "float", "String", "boolean", "Boolean", "Double", "Void", "Integer", "Long", "Float");
-        this.__typeMapping = newHashMap();
-        this.__typeMapping.put("array", "List");
-        this.__typeMapping.put("map", "Map");
-        this.__typeMapping.put("List", "List");
-        this.__typeMapping.put("boolean", "Boolean");
-        this.__typeMapping.put("string", "String");
-        this.__typeMapping.put("int", "Integer");
-        this.__typeMapping.put("float", "Float");
-        this.__typeMapping.put("number", "BigDecimal");
-        this.__typeMapping.put("DateTime", "Date");
-        this.__typeMapping.put("long", "Long");
-        this.__typeMapping.put("short", "Short");
-        this.__typeMapping.put("char", "String");
-        this.__typeMapping.put("double", "Double");
-        this.__typeMapping.put("object", "Object");
-        this.__typeMapping.put("integer", "Integer");
-        this.__typeMapping.put("ByteArray", "byte[]");
-        this.__typeMapping.put("binary", "byte[]");
-        this.__instantiationTypes = newHashMap();
-        this.__reservedWords = newHashSet();
-        this.__importMapping = newHashMap();
-        this.__importMapping.put("BigDecimal", "java.math.BigDecimal");
-        this.__importMapping.put("UUID", "java.util.UUID");
-        this.__importMapping.put("File", "java.io.File");
-        this.__importMapping.put("Date", "java.util.Date");
-        this.__importMapping.put("Timestamp", "java.sql.Timestamp");
-        this.__importMapping.put("Map", "java.util.Map");
-        this.__importMapping.put("HashMap", "java.util.HashMap");
-        this.__importMapping.put("Array", "java.util.List");
-        this.__importMapping.put("ArrayList", "java.util.ArrayList");
-        this.__importMapping.put("List", "java.util.*");
-        this.__importMapping.put("Set", "java.util.*");
-        this.__importMapping.put("DateTime", "org.joda.time.*");
-        this.__importMapping.put("LocalDateTime", "org.joda.time.*");
-        this.__importMapping.put("LocalDate", "org.joda.time.*");
-        this.__importMapping.put("LocalTime", "org.joda.time.*");
         this.__cliOptions.push(CliOption.newBoolean(CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG, CodegenConstants.SORT_PARAMS_BY_REQUIRED_FLAG_DESC).defaultValue("true"));
         this.__cliOptions.push(CliOption.newBoolean(CodegenConstants.ENSURE_UNIQUE_PARAMS, CodegenConstants.ENSURE_UNIQUE_PARAMS_DESC).defaultValue("true"));
         this.initalizeSpecialCharacterMapping();
@@ -1994,35 +1993,35 @@ export default class DefaultCodegen {
             p.example = p.paramName + "_example";
         }
         else if ((p.isBoolean)) {
-            p.example ="true";
+            p.example = "true";
         }
         else if ((p.isLong)) {
-            p.example ="789";
+            p.example = "789";
         }
         else if ((p.isInteger)) {
-            p.example ="56";
+            p.example = "56";
         }
         else if ((p.isFloat)) {
-            p.example ="3.4";
+            p.example = "3.4";
         }
         else if ((p.isDouble)) {
-            p.example ="1.2";
+            p.example = "1.2";
         }
         else if ((p.isBinary)) {
-            p.example ="BINARY_DATA_HERE";
+            p.example = "BINARY_DATA_HERE";
         }
         else if ((p.isByteArray)) {
-            p.example ="B";
+            p.example = "B";
         }
         else if ((p.isDate)) {
-            p.example ="2013-10-20";
+            p.example = "2013-10-20";
         }
         else if ((p.isDateTime)) {
-            p.example ="2013-10-20T19:20:30+01:00";
+            p.example = "2013-10-20T19:20:30+01:00";
         }
         else if ((param != null && param instanceof FormParameter) && (((o1, o2) => o1.toUpperCase() === (o2 === null ? o2 : o2.toUpperCase()))("file", param.getType()) || ("file" === p.baseType))) {
             p.isFile = true;
-            p.example ="/path/to/file.txt";
+            p.example = "/path/to/file.txt";
         }
         this.setParameterExampleValue(p);
         if (param != null && param instanceof QueryParameter) {
