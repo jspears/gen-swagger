@@ -86,7 +86,7 @@ export default class DefaultCodegen {
         this.__vendorExtensions = newHashMap();
         this.__supportingFiles = [];
         this.__cliOptions = [];
-        this.__supportedLibraries = (new LinkedHashMap());
+        this.__supportedLibraries = newHashMap();
         this.sortParamsByRequiredFlag = true;
         this.ensureUniqueParams = true;
         this.specialCharReplacements = newHashMap();

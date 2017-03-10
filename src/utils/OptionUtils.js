@@ -1,5 +1,5 @@
 import {isNotEmpty} from '../java/StringUtils';
-import {ArrayList} from "./java/javaUtil";
+import {ArrayList} from "../java/javaUtil";
 import Pair from '../java/Pair';
 
 export const parseCommaSeparatedTuples = (input) => {

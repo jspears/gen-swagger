@@ -11,10 +11,14 @@ export default class CliOption {
     static newString(opt, description) {
         return new CliOption(opt, description, StringProperty.TYPE);
     }
-    constructor(opt, description, type = StringProperty.TYPE) {
+
+    constructor(opt, description, type = StringProperty.TYPE, short, enumValues, required) {
         this.opt = opt;
         this.description = description;
         this.type = type;
+        this.short = short;
+        this.enumValues = enumValues;
+        this.required = required;
     }
 
     getOpt() {
@@ -52,7 +56,7 @@ export default class CliOption {
 
     addEnum(value, description) {
         if (this.enumValues == null) {
-            this.enumValues =newHashMap();
+            this.enumValues = newHashMap();
         }
         if (!this.enumValues.containsKey(value)) {
             this.enumValues.put(value, description);
@@ -69,14 +73,14 @@ export default class CliOption {
     }
 
 
-
     getOptionHelp() {
         let sb = new StringBuilder(this.description);
         if (this.__defaultValue != null) {
             sb.append(" (Default: ").append(this.__defaultValue).append(")");
         }
         if (this.enumValues != null) {
-            for (const [key, value] in this.enumValues) {
+            let i = 0;
+            for (const [key, value] of this.enumValues) {
                 sb.append("\n    ").append(key).append(" - ").append(value);
             }
         }

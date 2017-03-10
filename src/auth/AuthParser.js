@@ -1,6 +1,5 @@
 import  AuthorizationValue from '../models/auth/AuthorizationValue';
 import LoggerFactory from "../java/LoggerFactory";
-import {ArrayList} from "../java/javaUtil";
 import {isNotEmpty} from '../java/StringUtils';
 import StringBuilder from '../java/StringBuilder';
 import {URLDecoder, URLEncoder} from '../java/encoders';
@@ -8,7 +7,7 @@ import {URLDecoder, URLEncoder} from '../java/encoders';
 export default class AuthParser {
 
     static parse(urlEncodedAuthStr) {
-        const auths = (new ArrayList());
+        const auths = [];
         if (isNotEmpty(urlEncodedAuthStr)) {
             for (const part of urlEncodedAuthStr.split(",")) {
                 let kvPair = part.split(":", 2);
@@ -37,9 +36,8 @@ export default class AuthParser {
             }
             return b.toString();
         }
-        else {
-            return null;
-        }
+
+        return null;
     }
 }
 const Log = LoggerFactory.getLogger(AuthParser);

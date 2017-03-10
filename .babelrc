@@ -1,4 +1,4 @@
 {
-  "plugins": ["transform-class-properties", "transform-async-to-generator"],
+  "plugins": ["transform-class-properties", "transform-async-to-generator", "transform-decorators-legacy"],
   "presets":["node6"]
 }

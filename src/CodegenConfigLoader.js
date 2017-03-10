@@ -1,5 +1,6 @@
 import Class from './java/Class';
-import {load} from './java/ServiceLoader'
+import ServiceLoader from './java/ServiceLoader'
+import StringBuilder from './java/StringBuilder';
 
 export default  {
     /**
@@ -9,7 +10,7 @@ export default  {
      * @return config class
      */
     forName(name) {
-        let loader = load("io.swagger.codegen.CodegenConfig");
+        let loader = ServiceLoader.load("io.swagger.codegen.CodegenConfig");
         let availableConfigs = new StringBuilder();
         for (const config of loader) {
             if ((config.getName() === name)) {

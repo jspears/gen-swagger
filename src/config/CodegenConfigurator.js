@@ -8,7 +8,9 @@ import LoggerFactory from "../java/LoggerFactory";
 import {isNotEmpty, isEmpty} from "../java/StringUtils";
 import {apply} from "../java/beanUtils";
 import System from "../java/System";
-import fs from 'fs';
+import fs from "fs";
+import {newHashMap} from "../java/javaUtil";
+import Swagger from '../java/Swagger';
 
 const Validate = {
     notEmpty(value, message){
@@ -21,20 +23,21 @@ const Validate = {
  * It also has a convenience method for creating a ClientOptInput class which is THE object DefaultGenerator.java needs
  * to generate code.
  */
-export class CodegenConfigurator {
+export default class CodegenConfigurator {
+    systemProperties = newHashMap();
+    instantiationTypes = newHashMap();
+    typeMappings = newHashMap();
+    additionalProperties = newHashMap();
+    importMappings = newHashMap();
+    languageSpecificPrimitives = newHashMap();
+    gitUserId = "GIT_USER_ID";
+    gitRepoId = "GIT_REPO_ID";
+    releaseNote = "Minor update";
+    dynamicProperties = newHashMap();
+    verbose = false;
+    skipOverwrite = false;
+
     constructor() {
-        this.systemProperties = newHashMap();
-        this.instantiationTypes = newHashMap();
-        this.typeMappings = newHashMap();
-        this.additionalProperties = newHashMap();
-        this.importMappings = newHashMap();
-        this.languageSpecificPrimitives = newHashMap();
-        this.gitUserId = "GIT_USER_ID";
-        this.gitRepoId = "GIT_REPO_ID";
-        this.releaseNote = "Minor update";
-        this.dynamicProperties = newHashMap();
-        this.verbose = false;
-        this.skipOverwrite = false;
         this.setOutputDir(".");
     }
 
@@ -312,7 +315,7 @@ export class CodegenConfigurator {
         return this;
     }
 
-    toClientOptInput() {
+    async toClientOptInput() {
 
         Validate.notEmpty(this.lang, "language must be specified");
         Validate.notEmpty(this.inputSpec, "input spec must be specified");
@@ -345,9 +348,8 @@ export class CodegenConfigurator {
         config.additionalProperties().putAll(this.additionalProperties);
         let input = new ClientOptInput().config(config);
         let authorizationValues = AuthParser.parse(this.auth);
-        let swagger = new SwaggerParser().read(this.inputSpec, authorizationValues, true);
-        input.opts(new ClientOpts()).swagger(swagger);
-        return input;
+        const swagger = await Swagger.create({definition: this.inputSpec});
+        return input.opts(new ClientOpts()).swagger(swagger);
     }
 
     addDynamicProperty(name, value) {
@@ -360,16 +362,13 @@ export class CodegenConfigurator {
     }
 
     handleDynamicProperties(codegenConfig) {
-        for (let index128 = codegenConfig.cliOptions().iterator(); index128.hasNext();) {
-            let langCliOption = index128.next();
-            {
-                let opt = langCliOption.getOpt();
-                if (this.dynamicProperties.containsKey(opt)) {
-                    codegenConfig.additionalProperties().put(opt, this.dynamicProperties.get(opt));
-                }
-                else if (this.systemProperties.containsKey(opt)) {
-                    codegenConfig.additionalProperties().put(opt, this.systemProperties.get(opt).toString());
-                }
+        for (const langCliOption of codegenConfig.cliOptions()) {
+            let opt = langCliOption.getOpt();
+            if (this.dynamicProperties.containsKey(opt)) {
+                codegenConfig.additionalProperties().put(opt, this.dynamicProperties.get(opt));
+            }
+            else if (this.systemProperties.containsKey(opt)) {
+                codegenConfig.additionalProperties().put(opt, this.systemProperties.get(opt).toString());
             }
         }
     }
