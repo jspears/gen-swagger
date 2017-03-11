@@ -3,12 +3,16 @@ import pad from "lodash/padEnd";
 
 const SORT_CMDS = (a, b) => a.Usage.name.localeCompare(b.Usage.name);
 const SORT_OPTS = (b, a) => {
-    let ret = a.name[0].replace(PREFIX, '').localeCompare(b.name[0].replace(PREFIX, ''));
-    if (ret === 0 && (a.name.length > 1 && b.name.length > 1)) {
-        ret = a.name[1].replace(PREFIX, '').localeCompare(b.name[1].replace(PREFIX, ''));
+    if (a.required && !b.required) {
+        return 1;
     }
-    if (ret == 0) {
-        ret = a.name.length - b.name.length;
+    if (b.required && !a.required) {
+        return -1;
+    }
+    let ret = a.name[0].replace(PREFIX, '').localeCompare(b.name[0].replace(PREFIX, ''));
+    if (ret == 0 && a.name.length > 1) {
+        if (b.name.length < 2)return 1;
+        ret = a.name[1].repalce(PREFIX, '').localeCompare(b.name[1].replace(PREFIX, ''));
     }
     return ret;
 };
@@ -31,6 +35,29 @@ export class Command {
         return str;
     }
 }
+export class CommandUsage {
+    constructor(values, meta, cmd) {
+        this.values = values;
+        this.cmd = cmd;
+        this.meta = meta;
+    }
+
+    run() {
+        const {name, options, description} = this.cmd.Usage;
+        const {values} = this;
+        let str = `Command ${name} has the following options:\n${description}`;
+        for (const opt of options.sort(SORT_OPTS)) {
+            const property = opt.property || camelCase(values[opt.title]);
+            const value = (values[property] || opt.title);
+            const short = opt.name.length > 1 ? opt.name[0] : '';
+            const long = opt.name.length > 1 ? opt.name[1] : opt.name[0];
+            str = `${str}
+\t${pad(opt.required ? '* ' : '', 2)}${pad(short, 5)} ${pad(long, 25)} ${pad(opt.hasArg ? `[${value}]` : '', 20)}\v${opt.description}`
+        }
+        return str;
+    }
+}
+
 export class Help {
     static Usage = new Command({name: "help", description: "This helpful message."}, []);
 
@@ -54,9 +81,23 @@ class CliError extends Error {
         this.opt = opt;
     }
 }
+class CommandErrorHandler {
+    constructor(values, meta, cmd) {
+        this.values = values;
+        this.meta = meta;
+        this.cmd = cmd;
+    }
+
+    handle(message) {
+        if (this.meta.commandUsage) {
+            const help = new this.meta.commandUsage(this.values, this.meta).run();
+            throw new CliError(`${message}\n${help}`);
+        }
+    }
+}
 export class Cli {
     static builder(name) {
-        const opts = {name};
+        const opts = {name, commandHelp: Help, commandUsage: CommandUsage, commandErrorHandler: CommandErrorHandler};
         const w = {
             withDescription(description){
                 opts.description = description;
@@ -70,10 +111,22 @@ export class Cli {
                 opts.commands = commands;
                 return w;
             },
+            withCommandsHelp(commandHelp){
+                opts.commandHelp = commandHelp;
+                return w;
+            },
+            withCommandUsage(commandUsage){
+                opts.commandUsage = commandUsage;
+                return w;
+            },
+            withCommandErrorHandler(errorHandler){
+                opts.commandErrorHandler = errorHandler;
+                return w;
+            },
             build(){
                 return {
-                    async parse(args = []){
-                        const values = {};
+                    parse(args = [], values = {}){
+
                         const isHelp = args.indexOf('-h') > -1 || args.indexOf("--help") > -1;
 
                         if (args.length == 0 || (args.length === 1 && isHelp)) {
@@ -89,7 +142,10 @@ export class Cli {
                             }
                         }
                         if (!Command) {
-                            throw new CliError(args.length ? `Unknown Command  ${args[0]}` : 'No Command given');
+                            new opts.commandErrorHandler(values, opts, Command).handle(args.length ? `Unknown Command  ${args[0]}` : 'No Command given');
+                        }
+                        if (isHelp && Command == opts.defaultCommand) {
+                            return new opts.commandHelp(values, opts).run();
                         }
                         for (const opt of Command.Usage.options) {
                             let _check;
@@ -105,7 +161,9 @@ export class Cli {
                                 const property = opt.property || camelCase(opt.title);
                                 if (_check.hasArg) {
                                     if (idx + 1 > args.length) {
-                                        throw new CliError(`${_check.name} requires a value`, Command, opt, values);
+
+                                        return new opts.commandErrorHandler(values, opts, Command).handle(`${_check.name} requires a value`);
+
                                     }
                                     values[property] = args[idx + 1];
                                 } else {
@@ -113,15 +171,16 @@ export class Cli {
                                 }
                             } else {
                                 if (opt.required) {
-                                    throw new CliError(`${args[0]} requires a option for ${opt.name[0]}`, Command, opt, values);
+                                    new opts.commandErrorHandler(values, opts, Command).handle(`${args[0]} requires a option for ${opt.description}`);
                                 }
                             }
                         }
 
                         if (isHelp) {
-                            return Command.Usage.help(values, opts);
+                            return new opts.commandUsage(values, opts, Command).run();
                         }
-                        return await new Command(values, opts).run();
+
+                        return new Command(values, opts).run();
                     }
                 }
             }
@@ -145,7 +204,6 @@ export class Options {
         this.options.push({short, long, hasArg, message});
     }
 }
-
 
 export class HelpFormatter {
     formatHelp(help, options = {options: []}) {
