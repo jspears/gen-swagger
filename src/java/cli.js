@@ -105,7 +105,7 @@ export class Cli {
                                 const property = opt.property || camelCase(opt.title);
                                 if (_check.hasArg) {
                                     if (idx + 1 > args.length) {
-                                        throw new CliError(`${_check.name} requires a value`, Command, opt);
+                                        throw new CliError(`${_check.name} requires a value`, Command, opt, values);
                                     }
                                     values[property] = args[idx + 1];
                                 } else {
@@ -113,7 +113,7 @@ export class Cli {
                                 }
                             } else {
                                 if (opt.required) {
-                                    throw new CliError(`${args[0]} requires a option for ${opt.description}`, Command, opt);
+                                    throw new CliError(`${args[0]} requires a option for ${opt.name[0]}`, Command, opt, values);
                                 }
                             }
                         }
@@ -126,7 +126,6 @@ export class Cli {
                 }
             }
         };
-
         return w;
     }
 }
